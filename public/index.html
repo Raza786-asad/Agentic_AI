@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic AI Studio - Multi-Agent Hackathon Workspace</title>
+  <meta name="description" content="Autonomous multi-agent copilot designed for fast technical prototyping, system planning, coding, and pitch generation.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-logo">🤖</div>
+        <span class="brand-text">Agentic AI Studio</span>
+        <span class="badge-tag">Hackathon v1.0</span>
+      </div>
+      <div class="nav-actions">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>System Online</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-grid">
+      
+      <!-- Sidebar: Agent Selector & Presets -->
+      <aside class="sidebar-panel">
+        
+        <!-- Agent Selection Card -->
+        <div class="card">
+          <h3 class="card-title">🤖 Active Agent Squad</h3>
+          <div id="agentList" class="agent-selector-list">
+            <!-- Dynamically populated agents -->
+            <div class="empty-state">
+              <div class="spinner"></div>
+              <span>Loading agents...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hackathon Presets Card -->
+        <div class="card">
+          <h3 class="card-title">🚀 Quick Hackathon Presets</h3>
+          <div class="preset-buttons">
+            <button class="btn-preset" onclick="applyPreset('planner', 'Build a full-stack AI resume parser web app with PDF upload and skills extraction.')">
+              <span>🗺️</span> Architect AI Resume Parser
+            </button>
+            <button class="btn-preset" onclick="applyPreset('coder', 'Write an Express middleware to rate limit API requests to 100 per minute per IP.')">
+              <span>⚡</span> Express Rate-Limit Middleware
+            </button>
+            <button class="btn-preset" onclick="applyPreset('researcher', 'Compare SQLite vs MongoDB vs PostgreSQL for a 24-hour hackathon project.')">
+              <span>🔍</span> Compare Hackathon Databases
+            </button>
+            <button class="btn-preset" onclick="applyPreset('pitch', 'Generate 3-minute pitch deck outline and 30-second elevator pitch for an AI Copilot.')">
+              <span>🚀</span> Pitch Deck Outline & Hook
+            </button>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Main Workspace -->
+      <section class="workspace-panel">
+        
+        <!-- Prompt Console -->
+        <div class="card prompt-card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title" style="margin-bottom: 0;">💬 Agent Prompt Console</h3>
+            <span id="activeAgentBadge" class="badge-tag" style="background: rgba(16, 185, 129, 0.15); border-color: var(--accent-emerald); color: var(--accent-emerald);">
+              Architect Agent Active
+            </span>
+          </div>
+
+          <div class="prompt-input-wrapper">
+            <textarea 
+              id="promptInput" 
+              class="prompt-textarea" 
+              placeholder="Describe your task, idea, feature request, or code bug here... (e.g. Build an AI-powered smart study planner with task scheduling API)"
+            ></textarea>
+          </div>
+
+          <div class="prompt-actions">
+            <span class="helper-text">Press <strong>Run Agent Task</strong> or <kbd>Ctrl + Enter</kbd> to execute</span>
+            <button id="runBtn" class="btn-primary" onclick="runAgentTask()">
+              <span>⚡ Run Agent Task</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Thought Stream Timeline -->
+        <div id="thoughtStreamWrapper" style="display: none;">
+          <div class="card">
+            <h3 class="card-title" style="color: var(--accent-cyan); margin-bottom: 0.75rem;">
+              🧠 Agent Reasoning & Execution Stream
+            </h3>
+            <div id="thoughtStream" class="thought-stream">
+              <!-- Dynamically populated steps -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Result Panel -->
+        <div class="card output-card">
+          <div class="output-header">
+            <div class="output-tabs">
+              <button id="tabFormatted" class="tab-btn active" onclick="switchOutputTab('formatted')">✨ Formatted View</button>
+              <button id="tabRaw" class="tab-btn" onclick="switchOutputTab('raw')">📄 Raw Markdown</button>
+            </div>
+            <button id="copyBtn" class="btn-secondary" onclick="copyOutputText()" style="display: none;">
+              <span>📋 Copy Output</span>
+            </button>
+          </div>
+
+          <!-- Formatted Display -->
+          <div id="formattedOutput" class="output-content">
+            <div class="empty-state">
+              <div class="empty-icon">💡</div>
+              <h4>Workspace Ready</h4>
+              <p>Select an agent on the left, enter a prompt above, or choose a hackathon preset to run your first agent workflow.</p>
+            </div>
+          </div>
+
+          <!-- Raw Display (Hidden by default) -->
+          <div id="rawOutput" class="output-content" style="display: none;">
+            <pre><code id="rawCode">No output generated yet.</code></pre>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>Agentic AI Studio &bull; Built for College Hackathons &bull; Fast &bull; Responsive &bull; Modular</span>
+    </footer>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
