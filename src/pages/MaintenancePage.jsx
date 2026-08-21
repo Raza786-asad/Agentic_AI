@@ -16,7 +16,7 @@ export default function MaintenancePage({ workOrders, onUpdateStatus, onTriggerT
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
           <Wrench className="w-7 h-7 text-cyan-400" /> Maintenance Work-Order Dispatch Kanban
         </h1>
         <p className="text-xs text-slate-400 mt-1">
@@ -33,7 +33,7 @@ export default function MaintenancePage({ workOrders, onUpdateStatus, onTriggerT
               {/* Column Header */}
               <div className={`p-3 rounded-xl border flex items-center justify-between ${col.color}`}>
                 <span className="text-xs font-bold uppercase tracking-wider">{col.label}</span>
-                <span className="w-5 h-5 rounded-full bg-slate-950/80 text-white font-extrabold text-[11px] flex items-center justify-center">
+                <span className="w-5 h-5 rounded-full bg-slate-950/80 text-slate-100 font-extrabold text-[11px] flex items-center justify-center">
                   {items.length}
                 </span>
               </div>
@@ -58,7 +58,7 @@ export default function MaintenancePage({ workOrders, onUpdateStatus, onTriggerT
                       </div>
 
                       <div>
-                        <h4 className="font-bold text-white text-xs">{item.defectType}</h4>
+                        <h4 className="font-bold text-slate-100 text-xs">{item.defectType}</h4>
                         <p className="text-[11px] text-slate-400 mt-0.5">{item.location}</p>
                       </div>
 

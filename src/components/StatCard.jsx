@@ -1,67 +1,91 @@
-import React from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
-export default function StatCard({ title, value, trend, trendUp, icon: Icon, colorTheme = 'cyan' }) {
-  const themes = {
-    cyan: {
-      cardBg: 'from-cyan-950/30 via-slate-900/90 to-slate-950/90 border-cyan-500/30 hover:border-cyan-400/80',
-      iconBg: 'bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 ring-2 ring-cyan-400/40',
-      accentBar: 'bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500',
-      valueColor: 'text-white'
-    },
-    rose: {
-      cardBg: 'from-rose-950/30 via-slate-900/90 to-slate-950/90 border-rose-500/30 hover:border-rose-400/80',
-      iconBg: 'bg-gradient-to-tr from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/30 ring-2 ring-rose-400/40',
-      accentBar: 'bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500',
-      valueColor: 'text-rose-300'
-    },
-    orange: {
-      cardBg: 'from-orange-950/30 via-slate-900/90 to-slate-950/90 border-orange-500/30 hover:border-orange-400/80',
-      iconBg: 'bg-gradient-to-tr from-orange-500 to-amber-600 text-white shadow-lg shadow-orange-500/30 ring-2 ring-orange-400/40',
-      accentBar: 'bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-500',
-      valueColor: 'text-orange-300'
-    },
-    amber: {
-      cardBg: 'from-amber-950/30 via-slate-900/90 to-slate-950/90 border-amber-500/30 hover:border-amber-400/80',
-      iconBg: 'bg-gradient-to-tr from-amber-500 to-yellow-600 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-400/40',
-      accentBar: 'bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500',
-      valueColor: 'text-amber-300'
-    },
-    emerald: {
-      cardBg: 'from-emerald-950/30 via-slate-900/90 to-slate-950/90 border-emerald-500/30 hover:border-emerald-400/80',
-      iconBg: 'bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400/40',
-      accentBar: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500',
-      valueColor: 'text-emerald-300'
-    }
+function useCounter(target, duration = 1500) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const start = Date.now();
+        const numeric = parseFloat(String(target).replace(/[^0-9.]/g, ''));
+        const hasDecimal = String(target).includes('.');
+        const timer = setInterval(() => {
+          const elapsed = Date.now() - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const val = eased * numeric;
+          setCount(hasDecimal ? val.toFixed(1) : Math.floor(val));
+          if (progress >= 1) clearInterval(timer);
+        }, 16);
+      }
+    }, { threshold: 0.3 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return { count, ref };
+}
+
+export default function StatCard({
+  label,
+  value,
+  suffix = '',
+  icon: Icon,
+  accent = '#06b6d4',
+  trend,         // 'up' | 'down' | 'neutral'
+  trendValue,    // e.g. '+12%'
+  description,
+  animate = true,
+}) {
+  const { count, ref } = useCounter(value);
+  const displayValue = animate ? count : value;
+
+  const trendConfig = {
+    up:      { icon: TrendingUp,   color: '#10b981', label: trendValue },
+    down:    { icon: TrendingDown, color: '#f43f5e', label: trendValue },
+    neutral: { icon: Minus,        color: '#64748b', label: trendValue },
   };
-
-  const currentTheme = themes[colorTheme] || themes.cyan;
+  const t = trend ? trendConfig[trend] : null;
 
   return (
-    <div className={`p-5 rounded-2xl border bg-gradient-to-br transition-all duration-300 relative overflow-hidden group glass-card-hover ${currentTheme.cardBg}`}>
-      {/* Top Accent Neon Gradient Bar */}
-      <div className={`absolute top-0 left-0 right-0 h-1.5 ${currentTheme.accentBar}`}></div>
+    <div ref={ref} className="stat-card" style={{ '--card-accent': accent }}>
+      {/* Glow blob */}
+      <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full blur-2xl opacity-10 pointer-events-none"
+        style={{ background: accent }} />
 
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">
-          {title}
-        </span>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 duration-200 ${currentTheme.iconBg}`}>
-          <Icon className="w-5 h-5" />
+      <div className="relative z-10">
+        {/* Top row */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: accent + '18', border: `1px solid ${accent}30` }}>
+            <Icon size={18} style={{ color: accent }} />
+          </div>
+
+          {t && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold"
+              style={{ background: t.color + '12', color: t.color, border: `1px solid ${t.color}25` }}>
+              <t.icon size={10} />
+              {t.label}
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="mt-3 flex items-baseline justify-between">
-        <h3 className={`text-2xl font-extrabold tracking-tight ${currentTheme.valueColor}`}>{value}</h3>
-        {trend && (
-          <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border flex items-center gap-0.5 ${
-            trendUp 
-              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm' 
-              : 'bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm'
-          }`}>
-            {trendUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-            {trend}
-          </span>
+        {/* Value */}
+        <div className="mb-1">
+          <span className="font-display font-black text-3xl text-white">{displayValue}</span>
+          {suffix && <span className="font-display font-black text-xl ml-0.5" style={{ color: accent }}>{suffix}</span>}
+        </div>
+
+        {/* Label */}
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{label}</p>
+
+        {/* Description */}
+        {description && (
+          <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">{description}</p>
         )}
       </div>
     </div>

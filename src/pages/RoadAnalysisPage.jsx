@@ -303,7 +303,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
           <Scan className="w-7 h-7 text-cyan-400" /> Google Maps & Neural Vision Classifier
         </h1>
         <p className="text-xs text-slate-400 mt-1">
@@ -318,7 +318,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
           {/* Step 1: Camera & File Upload Card */}
           <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
                 <Camera className="w-4 h-4 text-cyan-400" /> Step 1: Capture or Upload Photo
               </h3>
               <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
@@ -335,7 +335,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                   <Camera className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-extrabold text-white">📸 Open Device Camera</span>
+                <span className="text-xs font-extrabold text-slate-100">📸 Open Device Camera</span>
                 <span className="text-[10px] text-cyan-300/80 mt-1">Live Camera + Google Maps Pin</span>
               </button>
 
@@ -347,7 +347,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                   <MapPin className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-extrabold text-white">
+                <span className="text-xs font-extrabold text-slate-100">
                   {locationData.loading ? '📍 Locking GPS...' : '📍 Lock Google Maps Pin'}
                 </span>
                 <span className="text-[10px] text-slate-400 mt-1">
@@ -380,7 +380,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <div className="flex items-center gap-2.5">
                   <FileImage className="w-4 h-4 text-cyan-400 shrink-0" />
                   <div>
-                    <span className="font-bold text-white block">{fileDetails.name}</span>
+                    <span className="font-bold text-slate-100 block">{fileDetails.name}</span>
                     <span className="text-[10px] text-slate-400">Size: {fileDetails.size}</span>
                   </div>
                 </div>
@@ -433,14 +433,14 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
           {/* Step 2: Image Canvas & Neural Scanner Card */}
           <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4 relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <Scan className="w-4 h-4 text-cyan-400" /> Step 2: 4-Stage ML Model Laser Scanner
               </h3>
 
               <button
                 onClick={() => runMlModelAnalysis(selectedImage)}
                 disabled={scanning}
-                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all disabled:opacity-50"
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-100 rounded-xl font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all disabled:opacity-50"
               >
                 {scanning ? (
                   <>
@@ -465,7 +465,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <button
                   onClick={() => setMlTestMode('auto')}
                   className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                    mlTestMode === 'auto' ? 'bg-cyan-500 text-white shadow' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                    mlTestMode === 'auto' ? 'bg-cyan-500 text-slate-100 shadow' : 'bg-slate-900 text-slate-400 border border-slate-800'
                   }`}
                 >
                   🤖 Auto Pixel Analysis
@@ -473,7 +473,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <button
                   onClick={() => setMlTestMode('pothole')}
                   className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                    mlTestMode === 'pothole' ? 'bg-emerald-500 text-white shadow' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                    mlTestMode === 'pothole' ? 'bg-emerald-500 text-slate-100 shadow' : 'bg-slate-900 text-slate-400 border border-slate-800'
                   }`}
                 >
                   🛣️ Test Pothole Photo
@@ -481,7 +481,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <button
                   onClick={() => setMlTestMode('non-road')}
                   className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors ${
-                    mlTestMode === 'non-road' ? 'bg-rose-500 text-white shadow' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                    mlTestMode === 'non-road' ? 'bg-rose-500 text-slate-100 shadow' : 'bg-slate-900 text-slate-400 border border-slate-800'
                   }`}
                 >
                   🚫 Test Non-Road Photo
@@ -524,7 +524,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                       }}
                       className="absolute border-2 border-dashed border-rose-500 bg-rose-500/15 rounded-xl animate-pulse flex items-start justify-between p-2 shadow-2xl"
                     >
-                      <span className="bg-rose-600 text-white font-extrabold text-[10px] px-2 py-0.5 rounded shadow flex items-center gap-1">
+                      <span className="bg-rose-600 text-slate-100 font-extrabold text-[10px] px-2 py-0.5 rounded shadow flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> {aiResult.defectType} ({aiResult.confidence}%)
                       </span>
                       <span className="bg-slate-950/90 text-rose-400 font-mono text-[10px] px-1.5 py-0.5 rounded border border-rose-500/30">
@@ -552,7 +552,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
           {/* STEP 3: EMBEDDED GOOGLE MAPS PHOTO LOCATION PIN PREVIEW */}
           <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <Map className="w-4 h-4 text-cyan-400" /> Step 3: Google Maps Photo Location Pin
               </h3>
               <span className="text-[11px] font-semibold text-cyan-400 bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/20 flex items-center gap-1 font-mono">
@@ -573,7 +573,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
           {/* Diagnostics Card */}
           <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Cpu className="w-5 h-5 text-cyan-400" /> ML Classifier Diagnostics
               </h3>
 
@@ -600,7 +600,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                   {locationData.isLiveGps ? 'REAL GPS LOCKED' : 'Photo Location Pin'}
                 </span>
               </div>
-              <p className="text-white font-semibold text-xs leading-snug">{locationData.address}</p>
+              <p className="text-slate-100 font-semibold text-xs leading-snug">{locationData.address}</p>
               <div className="flex items-center justify-between font-mono text-[11px] text-cyan-300 pt-1 border-t border-slate-900">
                 <span>LAT: {locationData.lat}° N</span>
                 <span>LNG: {locationData.lng}° E</span>
@@ -673,7 +673,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
 
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <span className="text-[10px] text-slate-400 font-medium block">AI Classification</span>
-                    <span className="font-bold text-white text-xs truncate block">{aiResult.defectType}</span>
+                    <span className="font-bold text-slate-100 text-xs truncate block">{aiResult.defectType}</span>
                   </div>
 
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
@@ -728,13 +728,13 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                   disabled={!aiResult.isPotholeDetected}
                   className={`w-full py-3.5 rounded-xl font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all ${
                     aiResult.isPotholeDetected
-                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-cyan-500/20 cursor-pointer'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-100 shadow-cyan-500/20 cursor-pointer'
                       : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'
                   }`}
                 >
                   {aiResult.isPotholeDetected ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-white" /> Dispatch Work Order to Google Maps
+                      <CheckCircle2 className="w-4 h-4 text-slate-100" /> Dispatch Work Order to Google Maps
                     </>
                   ) : (
                     <>
@@ -754,12 +754,12 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="glass-panel border border-cyan-500/40 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
                 <Camera className="w-5 h-5 text-cyan-400" /> Real Device Camera & Google Maps Pin
               </h3>
               <button
                 onClick={closeRealCamera}
-                className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                className="p-1.5 rounded-lg bg-slate-900 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -814,9 +814,9 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
 
               <button
                 onClick={captureCameraPhoto}
-                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-extrabold text-sm shadow-xl shadow-cyan-500/30 flex items-center gap-2 transition-all cursor-pointer"
+                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-100 rounded-xl font-extrabold text-sm shadow-xl shadow-cyan-500/30 flex items-center gap-2 transition-all cursor-pointer"
               >
-                <Camera className="w-5 h-5 text-white" /> Capture Frame & Lock Pin
+                <Camera className="w-5 h-5 text-slate-100" /> Capture Frame & Lock Pin
               </button>
             </div>
           </div>

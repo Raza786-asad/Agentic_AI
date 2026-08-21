@@ -34,7 +34,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
             Urban Infrastructure Command Center
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">
               v2.0 LIVE
@@ -49,7 +49,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => navigate('/analysis')}
-            className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+            className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-100 rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
           >
             <Camera className="w-3.5 h-3.5" /> Snap Road Photo
           </button>
@@ -61,7 +61,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
           </button>
           <button
             onClick={() => onTriggerToast('Exporting Infrastructure Telemetry Report (PDF)...')}
-            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs border border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
+            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-100 rounded-xl text-xs border border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" /> Export
           </button>
@@ -116,7 +116,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
       <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4 shadow-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <MapPin className="w-5 h-5 text-cyan-400" /> Google Maps Live Infrastructure Monitoring
             </h3>
             <p className="text-xs text-slate-400">
@@ -133,8 +133,8 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
                 onClick={() => setSelectedFilter(f)}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                   selectedFilter === f
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-100 shadow-md'
+                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
                 }`}
               >
                 {f}
@@ -156,7 +156,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
       <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4 shadow-2xl">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               🔥 Priority Maintenance Dispatch Queue
             </h3>
             <p className="text-xs text-slate-400">
@@ -184,7 +184,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
             <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
               {sortedPriorityQueue.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-800/50 transition-colors group">
-                  <td className="p-3.5 font-semibold text-white">
+                  <td className="p-3.5 font-semibold text-slate-100">
                     {item.location}
                     <span className="block text-[10px] font-mono text-cyan-400 mt-0.5">{item.id}</span>
                   </td>

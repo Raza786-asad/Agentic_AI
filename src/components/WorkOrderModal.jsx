@@ -14,7 +14,7 @@ export default function WorkOrderModal({ defect, onClose, onUpdateStatus }) {
               <Wrench className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm flex items-center gap-2">
+              <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
                 Work Order Details: <span className="text-cyan-400 font-mono">{defect.id}</span>
               </h3>
               <p className="text-[11px] text-slate-400">{defect.location}</p>
@@ -22,7 +22,7 @@ export default function WorkOrderModal({ defect, onClose, onUpdateStatus }) {
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -33,7 +33,7 @@ export default function WorkOrderModal({ defect, onClose, onUpdateStatus }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
               <span className="text-[10px] text-slate-400 font-medium block">Defect Type</span>
-              <span className="font-bold text-white text-sm">{defect.type}</span>
+              <span className="font-bold text-slate-100 text-sm">{defect.type}</span>
             </div>
 
             <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">

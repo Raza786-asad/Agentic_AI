@@ -8,12 +8,12 @@ export default function Header({ currentUser, onLogout, unreadCount, notificatio
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <header className="h-20 bg-[#060913]/90 backdrop-blur-xl border-b border-slate-800/90 px-8 flex items-center justify-between sticky top-0 z-20 relative">
+    <header className="h-20 bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/90 px-8 flex items-center justify-between sticky top-0 z-20 relative">
       {/* Top Ambient Gradient Accent Line */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 via-blue-500 via-indigo-500 to-purple-600"></div>
 
       <div>
-        <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
+        <h2 className="text-xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2.5">
           Urban Infrastructure Command Center
           <span className={`text-xs px-3 py-0.5 rounded-full border font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md ${
             isAdmin
@@ -46,11 +46,11 @@ export default function Header({ currentUser, onLogout, unreadCount, notificatio
         <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-cyan-500/40 transition-all relative cursor-pointer"
+            className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-slate-100 hover:border-cyan-500/40 transition-all relative cursor-pointer"
           >
             <Bell className="w-4 h-4 text-cyan-400" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center animate-pulse shadow-[0_0_10px_#f43f5e]">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-slate-100 rounded-full text-[10px] font-bold flex items-center justify-center animate-pulse shadow-[0_0_10px_#f43f5e]">
                 {unreadCount}
               </span>
             )}
@@ -67,7 +67,7 @@ export default function Header({ currentUser, onLogout, unreadCount, notificatio
 
         {/* User Profile & Role Logout */}
         <div className="flex items-center gap-3 pl-3 border-l border-slate-800">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white font-extrabold text-xs shadow-lg ring-2 ${
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-slate-100 font-extrabold text-xs shadow-lg ring-2 ${
             isAdmin 
               ? 'bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 ring-cyan-400/40 shadow-cyan-500/25' 
               : 'bg-gradient-to-tr from-emerald-500 via-teal-600 to-cyan-600 ring-emerald-400/40 shadow-emerald-500/25'

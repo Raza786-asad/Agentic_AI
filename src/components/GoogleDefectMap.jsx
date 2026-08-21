@@ -64,16 +64,16 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
         zoom: activePhotoLocation ? 15 : 12,
         mapTypeId: mapType,
         styles: [
-          { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-          { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-          { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-          { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-          { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-          { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-          { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-          { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-          { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-          { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
+          { elementType: "geometry", stylers: [{ color: "#241812" }] },
+          { elementType: "labels.text.stroke", stylers: [{ color: "#241812" }] },
+          { elementType: "labels.text.fill", stylers: [{ color: "#A86F4B" }] },
+          { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#C18A63" }] },
+          { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#C18A63" }] },
+          { featureType: "road", elementType: "geometry", stylers: [{ color: "#302019" }] },
+          { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#3A271E" }] },
+          { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#D8C1B0" }] },
+          { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#4A3328" }] },
+          { featureType: "water", elementType: "geometry", stylers: [{ color: "#302019" }] }
         ],
         zoomControl: true,
         mapTypeControl: false,
@@ -99,7 +99,11 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
     if (!window.google || !window.google.maps) return;
 
     filteredDefects.forEach((defect) => {
-      const markerColor = defect.severity === 'Critical' ? '#ef4444' : defect.severity === 'High' ? '#f97316' : '#eab308';
+      let markerColor = '#D6A27C';
+      if (defect.waterlogging) markerColor = '#C18A63';
+      else if (defect.severity === 'Critical') markerColor = '#8A5A3D';
+      else if (defect.severity === 'High') markerColor = '#A86F4B';
+      else if (defect.severity === 'Low') markerColor = '#245BDB';
       
       const marker = new window.google.maps.Marker({
         position: { lat: defect.lat, lng: defect.lng },
@@ -111,15 +115,15 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
           fillColor: markerColor,
           fillOpacity: 0.9,
           strokeWeight: 2,
-          strokeColor: '#ffffff'
+          strokeColor: '#302019'
         }
       });
 
       const infoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div style="color: #0f172a; font-family: sans-serif; padding: 6px; max-width: 200px;">
-            <div style="font-weight: bold; font-size: 13px; color: #0284c7;">${defect.type}</div>
-            <div style="font-size: 11px; color: #475569; margin-top: 2px;">${defect.location}</div>
+          <div style="color: #241812; font-family: sans-serif; padding: 6px; max-width: 200px;">
+            <div style="font-weight: bold; font-size: 13px; color: #245BDB;">${defect.type}</div>
+            <div style="font-size: 11px; color: #5A4032; margin-top: 2px;">${defect.location}</div>
             <div style="font-size: 10px; margin-top: 4px; font-weight: bold; color: ${markerColor};">Severity: ${defect.severity}</div>
           </div>
         `
@@ -143,7 +147,7 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
         icon: {
           path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
           scale: 7,
-          fillColor: '#06b6d4',
+          fillColor: '#3F78F5',
           fillOpacity: 1,
           strokeWeight: 2,
           strokeColor: '#ffffff'
@@ -173,7 +177,7 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
     <div className="w-full h-full min-h-[420px] rounded-xl overflow-hidden relative border border-slate-800/80 shadow-2xl bg-slate-950 flex flex-col">
       {/* Map Header Controls Bar */}
       <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 z-20">
-        <div className="flex items-center gap-2 text-xs font-bold text-white">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-100">
           <MapPin className="w-4 h-4 text-cyan-400" />
           <span>Google Maps Smart City Operations</span>
           {activePhotoLocation && (
@@ -189,7 +193,7 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
             <button
               onClick={() => setMapType('roadmap')}
               className={`px-2.5 py-1 rounded font-semibold transition-colors ${
-                mapType === 'roadmap' ? 'bg-cyan-500 text-white shadow' : 'text-slate-400 hover:text-white'
+                mapType === 'roadmap' ? 'bg-cyan-500 text-slate-100 shadow' : 'text-slate-400 hover:text-slate-100'
               }`}
             >
               Roadmap
@@ -197,7 +201,7 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
             <button
               onClick={() => setMapType('satellite')}
               className={`px-2.5 py-1 rounded font-semibold transition-colors ${
-                mapType === 'satellite' ? 'bg-cyan-500 text-white shadow' : 'text-slate-400 hover:text-white'
+                mapType === 'satellite' ? 'bg-cyan-500 text-slate-100 shadow' : 'text-slate-400 hover:text-slate-100'
               }`}
             >
               Satellite
@@ -205,7 +209,7 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
             <button
               onClick={() => setMapType('hybrid')}
               className={`px-2.5 py-1 rounded font-semibold transition-colors ${
-                mapType === 'hybrid' ? 'bg-cyan-500 text-white shadow' : 'text-slate-400 hover:text-white'
+                mapType === 'hybrid' ? 'bg-cyan-500 text-slate-100 shadow' : 'text-slate-400 hover:text-slate-100'
               }`}
             >
               Hybrid
@@ -249,7 +253,7 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
             <div className="flex items-center gap-1.5 text-cyan-400 font-extrabold">
               <Navigation className="w-4 h-4" /> Photo Location Pin Locked
             </div>
-            <p className="text-white font-semibold">{activePhotoLocation.address || 'Uploaded Photo Location'}</p>
+            <p className="text-slate-100 font-semibold">{activePhotoLocation.address || 'Uploaded Photo Location'}</p>
             <div className="font-mono text-[10px] text-emerald-400 flex items-center gap-2">
               <span>LAT: {activeLoc.lat}° N</span>
               <span>LNG: {activeLoc.lng}° E</span>

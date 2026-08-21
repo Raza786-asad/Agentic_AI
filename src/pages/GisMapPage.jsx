@@ -12,7 +12,7 @@ export default function GisMapPage({ defects, onUpdateStatus, onTriggerToast }) 
       {/* Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
             <MapPin className="w-7 h-7 text-cyan-400" /> Google Maps Smart City GIS Command Center
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -31,7 +31,7 @@ export default function GisMapPage({ defects, onUpdateStatus, onTriggerToast }) 
               onClick={() => setSelectedFilter(filter)}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                 selectedFilter === filter
-                  ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/20'
+                  ? 'bg-cyan-500 text-slate-100 shadow-md shadow-cyan-500/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
             >

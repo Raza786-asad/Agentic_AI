@@ -31,7 +31,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
             <MessageSquareWarning className="w-7 h-7 text-amber-400" /> Citizen Complaints & Case Tracker
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -62,7 +62,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
+                <h3 className="text-sm font-extrabold text-slate-100 uppercase tracking-wider">
                   📊 Today's Citizen Complaints Raised Counter (All Citizens)
                 </h3>
                 <p className="text-[11px] text-slate-400">
@@ -80,7 +80,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
             <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-1">
               <span className="text-slate-400 font-medium text-[11px] block">Total Complaints Raised Today</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-extrabold text-white">{todayCount}</span>
+                <span className="text-2xl font-extrabold text-slate-100">{todayCount}</span>
                 <span className="text-[10px] text-cyan-400 font-semibold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
                   Total Today
                 </span>
@@ -117,7 +117,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
                 <Camera className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
+                <h3 className="text-sm font-extrabold text-slate-100 uppercase tracking-wider">
                   📊 My Reported Cases & Uploaded Potholes ({citizenName})
                 </h3>
                 <p className="text-[11px] text-slate-400">
@@ -175,7 +175,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
             <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-white">No Citizen Complaints in Queue</h3>
+            <h3 className="text-base font-bold text-slate-100">No Citizen Complaints in Queue</h3>
             <p className="text-xs text-slate-400 max-w-md mx-auto">
               Zero pending complaints. All municipal reports are up to date. You can report a new road defect using the <strong>Road Analysis</strong> camera tool.
             </p>
@@ -202,7 +202,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
 
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-extrabold text-white text-sm">{item.id}</span>
+                      <span className="font-extrabold text-slate-100 text-sm">{item.id}</span>
                       <span className="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 flex items-center gap-1">
                         <User className="w-3 h-3 text-cyan-400" /> {item.citizenName}
                       </span>
@@ -227,7 +227,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
                       <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
                         <AlertCircle className="w-3.5 h-3.5" />
                         Possible duplicate detected:
-                        <strong className="text-white font-mono">{item.aiSimilarity}% similarity with {item.matchedDefectId}</strong>
+                        <strong className="text-slate-100 font-mono">{item.aiSimilarity}% similarity with {item.matchedDefectId}</strong>
                       </div>
                     )}
                   </div>
@@ -244,7 +244,7 @@ export default function ComplaintsPage({ complaints = [], onMergeComplaint, onTr
                       {isAdmin && item.matchedDefectId && (
                         <button
                           onClick={() => handleMerge(item.id, item.matchedDefectId)}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-100 rounded-xl text-xs font-bold shadow-lg shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                           <GitMerge className="w-4 h-4" /> Merge Duplicate
                         </button>

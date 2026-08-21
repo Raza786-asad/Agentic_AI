@@ -16,7 +16,7 @@ export default function SettingsPage({ onTriggerToast }) {
   return (
     <div className="p-8 space-y-8 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+        <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
           <Settings className="w-7 h-7 text-cyan-400" /> Platform Settings & Operations Controls
         </h1>
         <p className="text-xs text-slate-400 mt-1">
@@ -27,7 +27,7 @@ export default function SettingsPage({ onTriggerToast }) {
       <div className="space-y-6">
         {/* Google Maps API Configuration Card */}
         <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
             <MapPin className="w-4 h-4 text-cyan-400" /> Google Maps API Key Configuration
           </h3>
 
@@ -42,7 +42,7 @@ export default function SettingsPage({ onTriggerToast }) {
                   placeholder="Paste AIzaSy... your Google Maps API Key here"
                   value={googleMapsKey}
                   onChange={(e) => setGoogleMapsKey(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
                 />
               </div>
               <p className="text-[11px] text-slate-400 mt-1">
@@ -54,7 +54,7 @@ export default function SettingsPage({ onTriggerToast }) {
 
         {/* AI Model Controls */}
         <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
             <Sliders className="w-4 h-4 text-cyan-400" /> AI Neural Vision Parameters
           </h3>
 
@@ -94,7 +94,7 @@ export default function SettingsPage({ onTriggerToast }) {
 
         {/* GIS & Telemetry Integration */}
         <div className="glass-panel p-6 rounded-2xl border border-slate-800/80 space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider flex items-center gap-2">
             <Database className="w-4 h-4 text-cyan-400" /> Smart City GIS Integration
           </h3>
 
@@ -112,7 +112,7 @@ export default function SettingsPage({ onTriggerToast }) {
 
         <button
           onClick={handleSave}
-          className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer"
+          className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-100 rounded-xl font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition-all cursor-pointer"
         >
           <Save className="w-4 h-4" /> Save Configuration Parameters
         </button>
