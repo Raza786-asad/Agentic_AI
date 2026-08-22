@@ -4,8 +4,172 @@ import {
   Building2, ArrowRight, ShieldCheck, MapPin, Activity, Camera,
   AlertOctagon, Sparkles, Layers, Cpu, GitCommit, CheckCircle2,
   Droplets, Navigation, ExternalLink, ChevronRight, Zap,
-  BarChart3, Shield, TrendingUp, Clock, Users, Star, Menu, X
+  BarChart3, Shield, TrendingUp, Clock, Users, Star, Menu, X, Loader2
 } from 'lucide-react';
+
+/* ─── Unique Orbital Lidar Scan Animation ─── */
+function SplashScreen({ onComplete }) {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    // Stage 0: 0s - Global radar spinning, searching
+    // Stage 1: 2.5s - Anomaly detected, radar locks, screen zooms in
+    // Stage 2: 5s - Drone dispatched, repairing
+    // Stage 3: 7.5s - Resolved, system online
+    const t1 = setTimeout(() => setStage(1), 2500); 
+    const t2 = setTimeout(() => setStage(2), 5000); 
+    const t3 = setTimeout(() => setStage(3), 7500); 
+    const t4 = setTimeout(() => onComplete(), 9000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+  }, [onComplete]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#020617] overflow-hidden flex flex-col items-center justify-center font-mono">
+      <style>{`
+        @keyframes radar-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        @keyframes orbital-zoom {
+          0% { transform: scale(1) translate(0, 0); }
+          100% { transform: scale(6) translate(15%, -15%); }
+        }
+        .city-grid {
+          position: absolute;
+          inset: -50%;
+          background-image: 
+            linear-gradient(rgba(14, 165, 233, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
+          background-size: 40px 40px;
+          border-radius: 50%;
+          opacity: 0.5;
+        }
+        .radar-sweep {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: conic-gradient(from 0deg, transparent 70%, rgba(14, 165, 233, 0.1) 80%, rgba(14, 165, 233, 0.8) 100%);
+          animation: radar-spin 2s linear infinite;
+        }
+        .anomaly {
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          background: #f43f5e;
+          border-radius: 50%;
+          box-shadow: 0 0 15px 4px rgba(244,63,94,0.8);
+          animation: blink 1s infinite;
+        }
+        .anomaly.resolved {
+          background: #10b981;
+          box-shadow: 0 0 15px 4px rgba(16,185,129,0.8);
+          animation: none;
+        }
+        .zoom-container {
+          position: absolute;
+          inset: 0;
+          transition: transform 2.5s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+        .zoom-container.zoomed {
+          transform: scale(6) translate(15%, -15%);
+        }
+      `}</style>
+
+      {/* The Global View Container */}
+      <div className={`zoom-container ${stage >= 1 ? 'zoomed' : ''}`}>
+        
+        {/* Radar Map Base */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-sky-500/20 rounded-full">
+          <div className="city-grid"></div>
+          
+          {/* Radar Sweep (Stops spinning when locked) */}
+          <div className="radar-sweep" style={{ animationPlayState: stage >= 1 ? 'paused' : 'running', opacity: stage >= 1 ? 0.2 : 1 }}></div>
+          
+          {/* Concentric Rings */}
+          <div className="absolute inset-10 border border-sky-500/10 rounded-full"></div>
+          <div className="absolute inset-32 border border-sky-500/20 rounded-full"></div>
+          <div className="absolute inset-56 border border-sky-500/10 rounded-full"></div>
+          
+          {/* Crosshairs */}
+          <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-sky-500/30"></div>
+          <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-sky-500/30"></div>
+
+          {/* Map Nodes / Anomalies */}
+          <div className={`anomaly ${stage >= 3 ? 'resolved' : ''}`} style={{ top: '35%', left: '35%' }}></div>
+          <div className="anomaly resolved" style={{ top: '65%', left: '70%', opacity: 0.5 }}></div>
+          <div className="anomaly resolved" style={{ top: '20%', left: '50%', opacity: 0.3 }}></div>
+        </div>
+      </div>
+
+      {/* Static Overlays (HUD) */}
+      <div className="absolute inset-0 z-30 pointer-events-none p-6">
+        
+        {/* Top Left Title */}
+        <div className="absolute top-6 left-6">
+          <h1 className="text-sky-400 font-display font-black tracking-widest text-xl">ORBITAL // LIDAR</h1>
+          <p className="text-sky-500/70 text-xs">SATELLITE DOWNLINK ACTIVE</p>
+        </div>
+
+        {/* Top Right Status */}
+        <div className="absolute top-6 right-6 text-right">
+          <div className="text-xs text-sky-400">ALTITUDE: <span className="text-white">400 KM</span></div>
+          <div className="text-xs text-sky-400">LAT: <span className="text-white">28.7041° N</span></div>
+          <div className="text-xs text-sky-400">LON: <span className="text-white">77.1025° E</span></div>
+        </div>
+
+        {/* Dynamic Center Lock-On Box (Appears at Stage 1) */}
+        {stage >= 1 && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-rose-500/50 bg-rose-500/5 transition-colors duration-1000 flex items-center justify-center animate-fade-in" style={{ borderColor: stage >= 3 ? 'rgba(16,185,129,0.5)' : 'rgba(244,63,94,0.5)' }}>
+            
+            {/* Corner Brackets */}
+            <div className={`absolute -top-2 -left-2 w-6 h-6 border-t-2 border-l-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
+            <div className={`absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
+            <div className={`absolute -bottom-2 -left-2 w-6 h-6 border-b-2 border-l-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
+            <div className={`absolute -bottom-2 -right-2 w-6 h-6 border-b-2 border-r-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
+
+            {/* Target Label */}
+            <div className={`absolute -top-8 left-0 text-xs font-bold px-2 py-1 transition-colors duration-1000 ${stage >= 3 ? 'bg-emerald-500 text-emerald-950' : 'bg-rose-500 text-rose-950'}`}>
+              {stage === 1 ? 'TARGET LOCKED' : stage === 2 ? 'DISPATCHING DRONE...' : 'REPAIR CONFIRMED'}
+            </div>
+
+            {/* Drone Repair Laser (Stage 2) */}
+            {stage === 2 && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[200px] h-[2px] bg-emerald-400 shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] animate-[spin_1s_linear_infinite] origin-left"></div>
+            )}
+          </div>
+        )}
+
+        {/* Bottom Left Logs */}
+        <div className="absolute bottom-6 left-6 w-80">
+          <div className="text-[10px] text-sky-400/80 mb-2 border-b border-sky-900/50 pb-1">TERMINAL LOGS</div>
+          <div className="space-y-1 text-[10px]">
+            <div className="text-sky-300"> {'>'} INITIALIZING GLOBAL SCAN... OK</div>
+            <div className="text-sky-300"> {'>'} CALIBRATING SENSORS... OK</div>
+            {stage >= 1 && <div className="text-rose-400"> {'>'} CRITICAL INFRASTRUCTURE BREACH DETECTED.</div>}
+            {stage >= 1 && <div className="text-rose-400"> {'>'} ISOLATING COORDINATES...</div>}
+            {stage >= 2 && <div className="text-amber-400"> {'>'} DISPATCHING AUTOMATED REPAIR UNIT.</div>}
+            {stage >= 3 && <div className="text-emerald-400 font-bold"> {'>'} STRUCTURAL INTEGRITY RESTORED.</div>}
+          </div>
+        </div>
+
+        {/* Bottom Right Progress Bar */}
+        <div className="absolute bottom-6 right-6 w-64 text-right">
+          <div className="text-[10px] text-sky-400 mb-2">
+            OVERALL NETWORK STATUS: {stage >= 3 ? <span className="text-emerald-400">SECURE</span> : <span className="text-rose-400">COMPROMISED</span>}
+          </div>
+          <div className="w-full h-1 bg-sky-950 rounded overflow-hidden">
+            <div className="h-full bg-sky-500 transition-all duration-[7500ms] ease-linear" style={{ width: stage >= 3 ? '100%' : '10%' }}></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
 
 /* ─── Animated Counter ─── */
 function AnimatedCounter({ target, suffix = '', duration = 1800 }) {
@@ -87,6 +251,9 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showSplash, setShowSplash] = useState(() => {
+    return !sessionStorage.getItem('roadnex_splash_seen');
+  });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -127,6 +294,15 @@ export default function LandingPage() {
     { label: 'Issues Resolved',        value: '8400', suffix: '+',  icon: TrendingUp, accent: '#10b981' },
     { label: 'Active Cities',          value: '12',   suffix: '',   icon: Building2,  accent: '#f59e0b' },
   ];
+
+  if (showSplash) {
+    return (
+      <SplashScreen onComplete={() => {
+        sessionStorage.setItem('roadnex_splash_seen', 'true');
+        setShowSplash(false);
+      }} />
+    );
+  }
 
   return (
     <div className="min-h-screen text-slate-100 flex flex-col relative overflow-hidden" style={{ backgroundColor: '#0a0e1a' }}>

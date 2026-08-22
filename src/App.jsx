@@ -448,7 +448,7 @@ function AppContent() {
             } />
             <Route path="/admin/work-orders" element={
               <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
-                <MaintenancePage workOrders={workOrders} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
+                <MaintenancePage workOrders={workOrders} defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
               </ProtectedRoute>
             } />
             <Route path="/admin/analytics" element={

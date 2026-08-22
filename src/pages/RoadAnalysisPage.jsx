@@ -161,6 +161,10 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
     requestRealGpsLocation();
 
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser context (requires HTTPS or localhost).');
+      }
+
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((t) => t.stop());
       }
@@ -174,6 +178,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
       const attachStream = () => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.play().catch((e) => console.error('Video play error:', e));
         } else {
           setTimeout(attachStream, 50);
         }
@@ -723,7 +728,8 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                           lng: locationData.lng,
                           severity: aiResult.severity,
                           status: 'Pending',
-                          date: new Date().toISOString().split('T')[0]
+                          date: new Date().toISOString().split('T')[0],
+                          imageUrl: selectedImage
                         });
                       }
                     } else {

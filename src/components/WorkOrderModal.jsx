@@ -8,16 +8,20 @@ export default function WorkOrderModal({ defect, onClose, onUpdateStatus }) {
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-[#0f172a] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
         {/* Modal Header */}
-        <div className="p-5 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
-              <Wrench className="w-4 h-4" />
-            </div>
-            <div>
+        <div className="p-5 bg-slate-900 border-b border-slate-800 flex items-start justify-between">
+          <div className="flex items-start gap-4">
+            {defect.imageUrl ? (
+              <img src={defect.imageUrl} alt="Defect" className="w-16 h-16 rounded-xl object-cover border border-slate-700" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0">
+                <Wrench className="w-6 h-6" />
+              </div>
+            )}
+            <div className="pt-1">
               <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
                 Work Order Details: <span className="text-cyan-400 font-mono">{defect.id}</span>
               </h3>
-              <p className="text-[11px] text-slate-400">{defect.location}</p>
+              <p className="text-[11px] text-slate-400 mt-1">{defect.location}</p>
             </div>
           </div>
           <button

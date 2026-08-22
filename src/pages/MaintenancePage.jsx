@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Wrench, Clock, CheckCircle2, UserCheck, AlertOctagon, Eye } from 'lucide-react';
 import WorkOrderModal from '../components/WorkOrderModal';
 
-export default function MaintenancePage({ workOrders, onUpdateStatus, onTriggerToast }) {
+export default function MaintenancePage({ workOrders, defects = [], onUpdateStatus, onTriggerToast }) {
   const [selectedWorkOrder, setSelectedWorkOrder] = useState(null);
 
   const columns = [
@@ -116,7 +116,8 @@ export default function MaintenancePage({ workOrders, onUpdateStatus, onTriggerT
             priorityScore: selectedWorkOrder.priorityScore,
             complaints: 14,
             waterlogging: true,
-            status: selectedWorkOrder.status
+            status: selectedWorkOrder.status,
+            imageUrl: defects.find(d => d.id === selectedWorkOrder.defectId)?.imageUrl
           }}
           onClose={() => setSelectedWorkOrder(null)}
           onUpdateStatus={(id, status) => {
