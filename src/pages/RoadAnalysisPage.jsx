@@ -156,7 +156,6 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
     );
   };
 
-  // Open Real Camera
   const openRealCamera = async () => {
     setIsCameraOpen(true);
     requestRealGpsLocation();
@@ -171,9 +170,15 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
       });
 
       mediaStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      
+      const attachStream = () => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        } else {
+          setTimeout(attachStream, 50);
+        }
+      };
+      attachStream();
     } catch (err) {
       console.error('Camera Access Error:', err);
       onTriggerToast(`Camera Error: Unable to access camera device. (${err.message})`, 'warning');

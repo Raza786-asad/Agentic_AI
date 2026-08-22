@@ -47,6 +47,9 @@ CREATE TABLE IF NOT EXISTS reports (
   status          VARCHAR(32)    NOT NULL DEFAULT 'Reported',
   ai_assessment   TEXT           DEFAULT NULL,
   is_pothole      BOOLEAN        NOT NULL DEFAULT TRUE,
+  state           VARCHAR(64)    DEFAULT NULL,
+  district        VARCHAR(64)    DEFAULT NULL,
+  city            VARCHAR(64)    DEFAULT NULL,
   created_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ    NOT NULL DEFAULT NOW()
 );
@@ -54,6 +57,10 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE INDEX IF NOT EXISTS idx_reports_user_id    ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status     ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_state      ON reports(state);
+CREATE INDEX IF NOT EXISTS idx_reports_district   ON reports(district);
+CREATE INDEX IF NOT EXISTS idx_reports_city       ON reports(city);
+CREATE INDEX IF NOT EXISTS idx_reports_severity   ON reports(severity);
 
 -- =====================================================
 -- 3. COMPLAINTS TABLE (citizen complaint filings)

@@ -1,111 +1,187 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/StatCard';
 import DefectMap from '../components/DefectMap';
 import WorkOrderModal from '../components/WorkOrderModal';
 import { 
-  AlertOctagon, 
-  Flame, 
-  Droplets, 
-  MessageSquareWarning, 
-  CheckCircle2, 
-  Eye, 
-  Filter,
-  MapPin,
-  Camera,
-  Wrench,
-  Download,
-  Sparkles,
-  ArrowRight,
-  ShieldAlert
+  AlertOctagon, Flame, Droplets, MessageSquareWarning, CheckCircle2, Eye, Filter,
+  MapPin, Camera, Wrench, Download, Sparkles, ArrowRight, ShieldAlert, Loader2
 } from 'lucide-react';
 
 export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast }) {
   const navigate = useNavigate();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [activeDefectModal, setActiveDefectModal] = useState(null);
+  
+  const [selectedState, setSelectedState] = useState('ALL');
+  const [selectedDistrict, setSelectedDistrict] = useState('ALL');
+  const [selectedCity, setSelectedCity] = useState('ALL');
+
+  const [locations, setLocations] = useState([]);
+  const [incidents, setIncidents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const filters = ['All', 'Critical', 'High', 'Medium', 'Low', 'Waterlogging'];
 
-  const sortedPriorityQueue = [...defects].sort((a, b) => b.priorityScore - a.priorityScore);
+  // 1. Fetch distinct locations
+  useEffect(() => {
+    const token = localStorage.getItem('roadnex_token');
+    fetch('/api/reports/locations', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setLocations(data.locations);
+      }
+    })
+    .catch(err => console.error('Failed to load locations', err));
+  }, []);
+
+  // 2. Fetch filtered incidents
+  useEffect(() => {
+    const token = localStorage.getItem('roadnex_token');
+    setIsLoading(true);
+    
+    const params = new URLSearchParams();
+    if (selectedState !== 'ALL') params.append('state', selectedState);
+    if (selectedDistrict !== 'ALL') params.append('district', selectedDistrict);
+    if (selectedCity !== 'ALL') params.append('city', selectedCity);
+    if (selectedFilter !== 'All') params.append('severity', selectedFilter);
+
+    fetch(`/api/reports?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        setIncidents(data.reports);
+      }
+    })
+    .catch(err => console.error('Failed to load incidents', err))
+    .finally(() => setIsLoading(false));
+  }, [selectedState, selectedDistrict, selectedCity, selectedFilter]);
+
+  const sortedPriorityQueue = [...incidents].sort((a, b) => b.priorityScore - a.priorityScore);
+
+  const totalIncidents = incidents.length;
+  const criticalRisks = incidents.filter(d => d.severity === 'Critical' || d.severity === 'High').length;
+  const activeRepair = incidents.filter(d => d.status === 'Assigned' || d.status === 'In Progress').length;
+  const resolvedVerified = incidents.filter(d => d.status === 'Completed' || d.status === 'RESOLVED').length;
+
+  // Extract unique locations for dropdowns
+  const uniqueStates = ['ALL', ...new Set(locations.map(l => l.state).filter(Boolean))];
+  const uniqueDistricts = ['ALL', ...new Set(locations.filter(l => selectedState === 'ALL' || l.state === selectedState).map(l => l.district).filter(Boolean))];
+  const uniqueCities = ['ALL', ...new Set(locations.filter(l => (selectedState === 'ALL' || l.state === selectedState) && (selectedDistrict === 'ALL' || l.district === selectedDistrict)).map(l => l.city).filter(Boolean))];
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
+          <div className="text-[10px] font-extrabold text-cyan-400 tracking-widest uppercase mb-2 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            National Oversight & Road Health Index
+          </div>
           <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-2">
-            Urban Infrastructure Command Center
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-mono">
-              v2.0 LIVE
-            </span>
+            Ministry of Road Transport & Highways (MoRTH) Command
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time road condition monitoring, AI defect severity scoring, and automated contractor dispatching.
+          <p className="text-xs text-slate-400 mt-2 max-w-2xl">
+            Cross-state infrastructure telemetry, municipal compliance tracking, and automated AI quality audits.
           </p>
         </div>
 
         {/* Quick Launchpad Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => navigate('/analysis')}
-            className="px-3.5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-100 rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 transition-all cursor-pointer"
-          >
-            <Camera className="w-3.5 h-3.5" /> Snap Road Photo
-          </button>
-          <button
-            onClick={() => navigate('/gis-map')}
-            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold border border-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
-          >
-            <MapPin className="w-3.5 h-3.5 text-cyan-400" /> Google GIS Map
-          </button>
-          <button
-            onClick={() => onTriggerToast('Exporting Infrastructure Telemetry Report (PDF)...')}
-            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-100 rounded-xl text-xs border border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" /> Export
-          </button>
+          <div className="px-4 py-2 bg-slate-900 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-400 flex items-center gap-2 shadow-lg shadow-emerald-500/10">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+            {uniqueStates.length - 1} States Online
+          </div>
+          <div className="px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-slate-300">
+            {defects.length} Total Incidents
+          </div>
         </div>
       </div>
 
+      {/* TERRITORY DRILLDOWN BAR */}
+      <div className="glass-panel p-4 rounded-xl border border-cyan-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 flex-wrap w-full">
+          <div className="flex items-center gap-2 text-cyan-400 font-extrabold text-xs tracking-wider">
+            <Filter className="w-4 h-4" /> TERRITORY DRILLDOWN:
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-semibold">State:</span>
+            <select 
+              value={selectedState} 
+              onChange={(e) => { setSelectedState(e.target.value); setSelectedDistrict('ALL'); setSelectedCity('ALL'); }}
+              className="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-cyan-500 min-w-[120px]"
+            >
+              {uniqueStates.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-semibold">District:</span>
+            <select 
+              value={selectedDistrict} 
+              onChange={(e) => { setSelectedDistrict(e.target.value); setSelectedCity('ALL'); }}
+              className="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-cyan-500 min-w-[120px]"
+            >
+              {uniqueDistricts.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 font-semibold">City:</span>
+            <select 
+              value={selectedCity} 
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="bg-slate-950 border border-cyan-500/50 text-cyan-100 text-xs font-bold rounded-lg px-3 py-1.5 outline-none focus:border-cyan-400 min-w-[120px]"
+            >
+              {uniqueCities.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        
+        <button 
+          onClick={() => { setSelectedState('ALL'); setSelectedDistrict('ALL'); setSelectedCity('ALL'); }}
+          className="text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors whitespace-nowrap"
+        >
+          Reset Filters
+        </button>
+      </div>
+
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Defects"
-          value="238"
-          trend="12.5% vs last month"
+          title="National Incidents"
+          value={totalIncidents.toString()}
+          trend="Cross-Agency Intake"
           trendUp={true}
           icon={AlertOctagon}
           colorTheme="cyan"
         />
         <StatCard
-          title="Critical Issues"
-          value="19"
-          trend="3 new today"
+          title="Critical Road Risks"
+          value={criticalRisks.toString()}
+          trend="PriorityAI High Alert"
           trendUp={false}
           icon={Flame}
           colorTheme="rose"
         />
         <StatCard
-          title="Waterlogging Hotspots"
-          value="34"
-          trend="8 high risk"
-          trendUp={false}
-          icon={Droplets}
-          colorTheme="orange"
-        />
-        <StatCard
-          title="Open Complaints"
-          value="126"
-          trend="93% AI deduplicated"
+          title="In Active Repair"
+          value={activeRepair.toString()}
+          trend="Contractor Workflows"
           trendUp={true}
-          icon={MessageSquareWarning}
+          icon={Wrench}
           colorTheme="amber"
         />
         <StatCard
-          title="Resolved This Month"
-          value="182"
-          trend="82% resolution rate"
+          title="Resolved & Verified"
+          value={resolvedVerified.toString()}
+          trend="93% Visual Proof QA"
           trendUp={true}
           icon={CheckCircle2}
           colorTheme="emerald"
@@ -143,12 +219,25 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
           </div>
         </div>
 
-        <div className="h-[460px]">
-          <DefectMap
-            defects={defects}
-            selectedFilter={selectedFilter}
-            onSelectWorkOrder={setActiveDefectModal}
-          />
+        <div className="h-[460px] relative">
+          {isLoading && (
+            <div className="absolute inset-0 z-50 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center rounded-xl">
+              <Loader2 className="w-10 h-10 text-cyan-500 animate-spin" />
+            </div>
+          )}
+          {incidents.length === 0 && !isLoading ? (
+            <div className="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center rounded-xl border border-slate-800">
+              <MapPin className="w-12 h-12 text-slate-600 mb-3" />
+              <p className="text-slate-300 font-semibold">No infrastructure incidents found.</p>
+              <p className="text-xs text-slate-500 mt-1">Try expanding your territory or severity filters.</p>
+            </div>
+          ) : (
+            <DefectMap
+              defects={incidents}
+              selectedFilter={selectedFilter}
+              onSelectWorkOrder={setActiveDefectModal}
+            />
+          )}
         </div>
       </div>
 
@@ -188,7 +277,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
                     {item.location}
                     <span className="block text-[10px] font-mono text-cyan-400 mt-0.5">{item.id}</span>
                   </td>
-                  <td className="p-3.5 font-medium">{item.type}</td>
+                  <td className="p-3.5 font-medium">{item.defectType || item.type}</td>
                   <td className="p-3.5">
                     <span
                       className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
@@ -211,7 +300,7 @@ export default function DashboardPage({ defects, onUpdateStatus, onTriggerToast 
                       <span className="text-slate-500">No</span>
                     )}
                   </td>
-                  <td className="p-3.5 font-extrabold text-slate-200">{item.complaints}</td>
+                  <td className="p-3.5 font-bold text-slate-200">{item.complaints || 1}</td>
                   <td className="p-3.5">
                     <span className="font-extrabold text-rose-400 text-sm font-mono">{item.priorityScore}</span>
                   </td>

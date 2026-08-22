@@ -35,6 +35,9 @@ function rowToReport(r) {
     status:        r.status,
     aiAssessment:  r.ai_assessment,
     isPothole:     r.is_pothole,
+    state:         r.state,
+    district:      r.district,
+    city:          r.city,
     createdAt:     r.created_at,
     updatedAt:     r.updated_at,
   };
@@ -109,19 +112,42 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/', verifyToken, async (req, res) => {
   try {
     const user = req.user;
-    let query, params;
+    const { state, district, city, severity, status } = req.query;
+    
+    let whereClauses = [];
+    let queryParams = [];
+    let paramIndex = 1;
 
-    if (user.role === 'admin') {
-      // Admin sees all reports
-      query  = 'SELECT * FROM reports ORDER BY created_at DESC LIMIT 200';
-      params = [];
-    } else {
-      // Citizen sees only their own
-      query  = 'SELECT * FROM reports WHERE user_id = $1 ORDER BY created_at DESC';
-      params = [user.id];
+    if (user.role !== 'admin') {
+      whereClauses.push(`user_id = $${paramIndex++}`);
+      queryParams.push(user.id);
     }
 
-    const { rows } = await pool.query(query, params);
+    if (state && state !== 'ALL') {
+      whereClauses.push(`state = $${paramIndex++}`);
+      queryParams.push(state);
+    }
+    if (district && district !== 'ALL') {
+      whereClauses.push(`district = $${paramIndex++}`);
+      queryParams.push(district);
+    }
+    if (city && city !== 'ALL') {
+      whereClauses.push(`city = $${paramIndex++}`);
+      queryParams.push(city);
+    }
+    if (severity && severity !== 'All') {
+      whereClauses.push(`severity = $${paramIndex++}`);
+      queryParams.push(severity);
+    }
+    if (status && status !== 'All') {
+      whereClauses.push(`status = $${paramIndex++}`);
+      queryParams.push(status);
+    }
+
+    const whereStr = whereClauses.length > 0 ? 'WHERE ' + whereClauses.join(' AND ') : '';
+    const query = `SELECT * FROM reports ${whereStr} ORDER BY created_at DESC LIMIT 500`;
+
+    const { rows } = await pool.query(query, queryParams);
     res.json({ success: true, reports: rows.map(rowToReport) });
   } catch (err) {
     console.error('[Reports GET]', err);
@@ -140,6 +166,20 @@ router.get('/my', verifyToken, async (req, res) => {
     res.json({ success: true, reports: rows.map(rowToReport) });
   } catch (err) {
     console.error('[Reports GET /my]', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── GET /api/reports/locations — Unique Locations ────────────────────────────
+
+router.get('/locations', verifyToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT DISTINCT state, district, city FROM reports WHERE state IS NOT NULL ORDER BY state, district, city'
+    );
+    res.json({ success: true, locations: rows });
+  } catch (err) {
+    console.error('[Reports GET locations]', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -18,7 +18,10 @@ export const INITIAL_DEFECTS = [
     lat: 28.5708,
     lng: 77.3261,
     reportedDate: "2026-08-19",
-    status: "Pending"
+    status: "Pending",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    city: "Bengaluru"
   },
   {
     id: "RD-1088",
@@ -34,7 +37,10 @@ export const INITIAL_DEFECTS = [
     lat: 28.5480,
     lng: 77.2510,
     reportedDate: "2026-08-18",
-    status: "Assigned"
+    status: "Assigned",
+    state: "Delhi",
+    district: "South East Delhi",
+    city: "New Delhi"
   },
   {
     id: "RD-1015",
@@ -50,7 +56,10 @@ export const INITIAL_DEFECTS = [
     lat: 28.4795,
     lng: 77.0800,
     reportedDate: "2026-08-20",
-    status: "In Progress"
+    status: "In Progress",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    city: "Bengaluru"
   },
   {
     id: "RD-1033",
@@ -66,7 +75,10 @@ export const INITIAL_DEFECTS = [
     lat: 28.6328,
     lng: 77.2197,
     reportedDate: "2026-08-15",
-    status: "Pending"
+    status: "Pending",
+    state: "Delhi",
+    district: "New Delhi",
+    city: "New Delhi"
   },
   {
     id: "RD-1050",
@@ -82,7 +94,10 @@ export const INITIAL_DEFECTS = [
     lat: 28.4950,
     lng: 77.0890,
     reportedDate: "2026-08-21",
-    status: "Pending"
+    status: "Pending",
+    state: "Haryana",
+    district: "Gurugram",
+    city: "Gurugram"
   },
   {
     id: "RD-1072",
@@ -98,7 +113,10 @@ export const INITIAL_DEFECTS = [
     lat: 28.6100,
     lng: 77.3000,
     reportedDate: "2026-08-10",
-    status: "Completed"
+    status: "Completed",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    city: "Bengaluru"
   },
   {
     id: "RD-1099",
@@ -114,8 +132,11 @@ export const INITIAL_DEFECTS = [
     lat: 28.4500,
     lng: 77.0200,
     reportedDate: "2026-08-17",
-    status: "In Progress"
-  }
+    status: "In Progress",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    city: "Bengaluru"
+  },
 ];
 
 export const INITIAL_COMPLAINTS = [

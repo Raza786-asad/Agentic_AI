@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { MapPin, Navigation, ExternalLink, Layers, AlertTriangle, Droplets, CheckCircle2 } from 'lucide-react';
 
 export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', onSelectWorkOrder, centerLat = 28.5708, centerLng = 77.2510, activePhotoLocation = null }) {
   const mapRef = useRef(null);
   const googleMapInstance = useRef(null);
   const markersRef = useRef([]);
+  const clustererRef = useRef(null);
   
   const [mapType, setMapType] = useState('roadmap'); // 'roadmap', 'satellite', 'hybrid'
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || localStorage.getItem('VITE_GOOGLE_MAPS_API_KEY') || '');
@@ -93,38 +95,77 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
   };
 
   const renderMarkers = (map) => {
-    markersRef.current.forEach(m => m.setMap(null));
+    if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+    } else {
+      markersRef.current.forEach(m => m.setMap(null));
+    }
     markersRef.current = [];
 
     if (!window.google || !window.google.maps) return;
 
     filteredDefects.forEach((defect) => {
-      let markerColor = '#D6A27C';
-      if (defect.waterlogging) markerColor = '#C18A63';
-      else if (defect.severity === 'Critical') markerColor = '#8A5A3D';
-      else if (defect.severity === 'High') markerColor = '#A86F4B';
-      else if (defect.severity === 'Low') markerColor = '#245BDB';
+      let markerColor = '#3b82f6'; // LOW
+      const status = defect.status?.toUpperCase() || 'OPEN';
+      
+      if (status === 'RESOLVED' || status === 'COMPLETED') {
+        markerColor = '#22c55e'; // RESOLVED = green
+      } else if (defect.severity === 'Critical') {
+        markerColor = '#ef4444'; // CRITICAL = red
+      } else if (defect.severity === 'High') {
+        markerColor = '#f97316'; // HIGH = orange
+      } else if (defect.severity === 'Medium') {
+        markerColor = '#eab308'; // MEDIUM = yellow
+      }
       
       const marker = new window.google.maps.Marker({
         position: { lat: defect.lat, lng: defect.lng },
         map: map,
-        title: `${defect.type} - ${defect.location}`,
+        title: `${defect.type || defect.defectType} - ${defect.location}`,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: defect.severity === 'Critical' ? 10 : 8,
           fillColor: markerColor,
           fillOpacity: 0.9,
           strokeWeight: 2,
-          strokeColor: '#302019'
+          strokeColor: '#0f172a'
         }
       });
 
       const infoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div style="color: #241812; font-family: sans-serif; padding: 6px; max-width: 200px;">
-            <div style="font-weight: bold; font-size: 13px; color: #245BDB;">${defect.type}</div>
-            <div style="font-size: 11px; color: #5A4032; margin-top: 2px;">${defect.location}</div>
-            <div style="font-size: 10px; margin-top: 4px; font-weight: bold; color: ${markerColor};">Severity: ${defect.severity}</div>
+          <div style="background-color: #0f172a; color: #f8fafc; font-family: sans-serif; padding: 12px; max-width: 240px; border-radius: 8px; border: 1px solid #334155;">
+            <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">${defect.location}</div>
+            <div style="font-weight: 800; font-size: 14px; color: #38bdf8; margin-bottom: 8px;">${defect.type || defect.defectType}</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+              <div>
+                <div style="font-size: 10px; color: #64748b;">SEVERITY</div>
+                <div style="font-size: 12px; font-weight: bold; color: ${markerColor};">${defect.severity}</div>
+              </div>
+              <div>
+                <div style="font-size: 10px; color: #64748b;">STATUS</div>
+                <div style="font-size: 12px; font-weight: bold; color: ${status === 'RESOLVED' ? '#22c55e' : '#f8fafc'};">
+                  ${status === 'RESOLVED' ? '✓ ' : ''}${status}
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 10px; color: #64748b;">COMPLAINTS</div>
+                <div style="font-size: 12px; font-weight: bold;">${defect.complaints || 1}</div>
+              </div>
+              <div>
+                <div style="font-size: 10px; color: #64748b;">PRIORITY SCORE</div>
+                <div style="font-size: 12px; font-weight: bold; color: #fb7185;">${defect.priorityScore}</div>
+              </div>
+            </div>
+            
+            <div style="font-size: 10px; color: #475569; margin-bottom: 12px;">
+              Reported: ${new Date(defect.reportedDate || defect.createdAt).toLocaleDateString()}
+            </div>
+            
+            <button style="width: 100%; background-color: #38bdf8; color: #0f172a; border: none; padding: 6px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">
+              ${status === 'RESOLVED' ? 'View Details' : 'View Work Order'}
+            </button>
           </div>
         `
       });
@@ -137,6 +178,12 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
 
       markersRef.current.push(marker);
     });
+
+    if (clustererRef.current) {
+      clustererRef.current.addMarkers(markersRef.current);
+    } else {
+      clustererRef.current = new MarkerClusterer({ map, markers: markersRef.current });
+    }
 
     if (activePhotoLocation && window.google) {
       const photoMarker = new window.google.maps.Marker({
@@ -160,6 +207,23 @@ export default function GoogleDefectMap({ defects = [], selectedFilter = 'All', 
   useEffect(() => {
     if (googleMapInstance.current) {
       renderMarkers(googleMapInstance.current);
+      
+      // Auto-center map if there are filtered defects and no specific photo location is active
+      if (filteredDefects.length > 0 && !activePhotoLocation && window.google) {
+        const bounds = new window.google.maps.LatLngBounds();
+        filteredDefects.forEach(d => {
+          bounds.extend({ lat: d.lat, lng: d.lng });
+        });
+        googleMapInstance.current.fitBounds(bounds);
+        
+        // Prevent extreme zoom level when points are close together
+        const listener = window.google.maps.event.addListener(googleMapInstance.current, 'idle', () => {
+          if (googleMapInstance.current.getZoom() > 14) {
+            googleMapInstance.current.setZoom(14);
+          }
+          window.google.maps.event.removeListener(listener);
+        });
+      }
     }
   }, [defects, selectedFilter, activePhotoLocation]);
 
