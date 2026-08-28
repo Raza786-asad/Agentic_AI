@@ -181,20 +181,18 @@ export default function RegisterPage({ onLogin }) {
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10 overflow-y-auto">
         <div className="w-full max-w-[440px] space-y-5 animate-scale-in my-8">
 
-          <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors font-semibold">
+          <Link to="/login" className="inline-flex items-center gap-1.5 text-xs text-custom-sage hover:text-custom-taupe transition-colors font-semibold">
             <ChevronLeft size={15} /> Back to Login
           </Link>
 
-      <div className="w-full lg:w-[54%] flex items-center justify-center p-6 sm:p-12 z-10 relative">
-        <div className="w-full max-w-md animate-fade-left">
-          
-          <div className="mb-8">
-            <h2 className="text-3xl font-display font-bold text-custom-taupe mb-2">Create Account</h2>
-            <p className="text-sm text-custom-sage font-medium">Join the civic action network to report and track infrastructure issues.</p>
-          </div>
-
           <div className="glass-panel p-8 rounded-3xl relative border-t border-l border-white/50 shadow-[0_8px_32px_rgba(55,65,81,0.05)]">
             
+            {/* Header */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-display font-bold text-custom-taupe mb-2">Create Account</h2>
+              <p className="text-sm text-custom-sage font-medium">Join the civic action network to report and track infrastructure issues.</p>
+            </div>
+
             {error && (
               <div className="mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-bold animate-fade-down border border-rose-500/20 bg-rose-50 text-rose-600">
                 <AlertCircle size={16} className="shrink-0" /> {error}
