@@ -1,172 +1,334 @@
 import React, { useState } from 'react';
-import { Shield, User, Lock, Mail, ArrowRight, Sparkles, CheckCircle2, AlertOctagon, Building2 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import {
+  Mail, Lock, ArrowRight, CheckCircle2, ChevronLeft,
+  Eye, EyeOff, Phone, Navigation, Zap, Shield, Camera, MapPin
+} from 'lucide-react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
+
+/* ─── Input Field ─── */
+function InputField({ label, type: initialType, value, onChange, placeholder, icon: Icon, hint, extra, required = true, accentColor = '#10b981' }) {
+  const [showPass, setShowPass] = useState(false);
+  const isPassword = initialType === 'password';
+  const type = isPassword ? (showPass ? 'text' : 'password') : initialType;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-bold text-custom-sage uppercase tracking-wider">{label}</label>
+        {hint}
+      </div>
+      <div className="relative group">
+        <Icon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-custom-taupe/60 transition-colors duration-200" />
+        <input
+          type={type}
+          required={required}
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          className="w-full bg-white/50 border border-custom-sage/30 rounded-xl pr-10 py-3 text-sm text-custom-taupe focus:outline-none focus:border-custom-taupe font-medium transition-all"
+          style={{ paddingLeft: '40px' }}
+        />
+        {isPassword && (
+          <button type="button" onClick={() => setShowPass(!showPass)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
+            tabIndex={-1}
+          >
+            {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+        )}
+      </div>
+      {extra}
+    </div>
+  );
+}
+
+/* ─── Feature Bullet ─── */
+function Bullet({ icon: Icon, text, color = '#e66240' }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+        style={{ background: color + '15', border: `1px solid ${color}30` }}>
+        <Icon size={14} style={{ color }} />
+      </div>
+      <p className="text-xs text-custom-taupe leading-relaxed font-medium">{text}</p>
+    </div>
+  );
+}
 
 export default function LoginPage({ onLogin }) {
-  const [activeRole, setActiveRole] = useState('admin'); // 'admin' or 'user'
-  const [email, setEmail] = useState('admin@roadguard.gov.in');
-  const [password, setPassword] = useState('admin123');
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('citizen@roadguard.org');
+  const [password, setPassword] = useState('citizen123');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRoleSwitch = (role) => {
-    setActiveRole(role);
-    if (role === 'admin') {
-      setEmail('admin@roadguard.gov.in');
-      setPassword('admin123');
-    } else {
-      setEmail('citizen@roadguard.org');
-      setPassword('citizen123');
+  // Google Onboarding states
+  const [googleOnboarding, setGoogleOnboarding] = useState(false);
+  const [onboardingUserId, setOnboardingUserId] = useState('');
+  const [onboardingPhone, setOnboardingPhone] = useState('');
+  const [onboardingEmail, setOnboardingEmail] = useState('');
+  const [onboardingName, setOnboardingName] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed.');
+      onLogin(data.user, data.token);
+      navigate('/user/dashboard');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Google login failed.');
+      if (data.onboardingRequired) {
+        setGoogleOnboarding(true);
+        setOnboardingUserId(data.user.id);
+        setOnboardingEmail(data.user.email);
+        setOnboardingName(data.user.name);
+      } else {
+        onLogin(data.user, data.token);
+        navigate('/user/dashboard');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOnboardingSubmit = async (e) => {
     e.preventDefault();
-    if (activeRole === 'admin') {
-      onLogin({
-        name: 'Cmdr. A. Mehta',
-        title: 'Chief Urban Engineer',
-        email,
-        role: 'admin'
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/google-onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: onboardingUserId, phone: onboardingPhone })
       });
-    } else {
-      onLogin({
-        name: 'Rahul Sharma',
-        title: 'Verified Citizen User',
-        email,
-        role: 'user'
-      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Onboarding failed.');
+      onLogin(data.user, data.token);
+      navigate('/user/dashboard');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Dynamic Background Glow Elements */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="min-h-screen flex relative overflow-hidden" style={{ backgroundColor: '#f9f6ef', color: '#374151' }}>
 
-      <div className="max-w-md w-full glass-panel border border-slate-800/90 rounded-3xl p-8 space-y-6 shadow-2xl relative z-10">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center mx-auto shadow-lg shadow-cyan-500/20">
-            <Building2 className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center justify-center gap-2">
-            RoadGuard <span className="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 text-xs font-mono border border-cyan-500/30">AI 2.0</span>
-          </h1>
-          <p className="text-xs text-slate-400">
-            Smart City Infrastructure Monitoring & Citizen Portal
-          </p>
+      {/* ── BG Orbs ── */}
+      <div className="absolute w-[600px] h-[600px] -top-32 -left-32 pointer-events-none rounded-full blur-[120px] opacity-30" style={{ background: '#a3a093' }} />
+      <div className="absolute w-[500px] h-[500px] bottom-0 right-0 pointer-events-none rounded-full blur-[120px] opacity-20" style={{ background: '#e66240' }} />
+      <div className="bg-grid absolute inset-0 pointer-events-none opacity-40" />
+
+      {/* ═══════════ LEFT PANEL — Brand Visual ═══════════ */}
+      <div className="hidden lg:flex lg:w-[48%] relative flex-col justify-start gap-16 p-12 overflow-hidden" style={{ background: 'linear-gradient(160deg, #f9f6ef, #ffffff, #f4f0e6)' }}>
+        {/* Subtle accent glow */}
+        <div className="absolute top-0 left-0 w-80 h-80 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(163,160,147,0.1) 0%, transparent 70%)' }} />
+
+        {/* Top brand */}
+        <div className="relative z-10 animate-fade-down">
+          <Link to="/" className="flex flex-col gap-1 group w-fit">
+            <img src="/logo.png" alt="ROADNEX" className="h-14 object-contain" />
+            <p className="text-[10px] text-custom-sage font-medium">Smart Infrastructure AI</p>
+          </Link>
         </div>
 
-        {/* Role Selector Tabs */}
-        <div className="grid grid-cols-2 p-1.5 bg-slate-950 rounded-2xl border border-slate-800 gap-1 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => handleRoleSwitch('admin')}
-            className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              activeRole === 'admin'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Shield className="w-4 h-4" /> Municipal Admin
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleRoleSwitch('user')}
-            className={`py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-              activeRole === 'user'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <User className="w-4 h-4" /> Citizen User
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 block">
-              {activeRole === 'admin' ? 'Municipal Officer Email' : 'Citizen Email Address'}
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
-              />
-            </div>
+        {/* Center content */}
+        <div className="relative z-10 space-y-8 animate-fade-up delay-200">
+          <div>
+            <h2 className="font-display font-black text-4xl text-custom-taupe leading-tight mb-3">
+              Report. Track.<br />
+              <span className="text-custom-terra">Resolve.</span>
+            </h2>
+            <p className="text-custom-sage text-sm leading-relaxed max-w-sm">
+              Join thousands of citizens helping build safer roads. Your reports directly trigger municipal action within minutes.
+            </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300 block">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
-              />
-            </div>
+          <div className="space-y-4">
+            <Bullet icon={Camera}  color="#e66240" text="AI-powered road defect detection from your phone camera" />
+            <Bullet icon={MapPin}  color="#a3a093" text="GPS-pinned reports on interactive city maps" />
+            <Bullet icon={Shield}  color="#e66240" text="Real-time repair status tracking and notifications" />
+            <Bullet icon={Zap}     color="#a3a093" text="Average municipal response time under 42 minutes" />
           </div>
 
-          {/* Quick Demo Sign-in Button */}
-          <button
-            type="submit"
-            className={`w-full py-3.5 rounded-xl font-extrabold text-xs shadow-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              activeRole === 'admin'
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-cyan-500/25'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white shadow-emerald-500/25'
-            }`}
-          >
-            <span>
-              {activeRole === 'admin' ? '🛡️ Sign In as Municipal Admin' : '👤 Sign In as Citizen User'}
-            </span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
+          </div>
 
-        {/* Feature Badges for Active Role */}
-        <div className="pt-4 border-t border-slate-800 space-y-2 text-[11px]">
-          <span className="text-slate-400 font-bold uppercase tracking-wider block text-[10px]">
-            {activeRole === 'admin' ? 'Admin Access Capabilities:' : 'Citizen Access Capabilities:'}
-          </span>
-          {activeRole === 'admin' ? (
-            <div className="space-y-1.5 text-slate-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>Full GIS Operations Dashboard & Google Maps</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>Review & Count Daily Citizen Complaints Raised</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                <span>Kanban Contractor Dispatch & Settings</span>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-1.5 text-slate-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Real Device Camera Pothole Capture</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Lock Real GPS Pin on Google Maps</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>File Citizen Complaints & Track Status</span>
-              </div>
-            </div>
-          )}
+
+      </div>
+
+      {/* ═══════════ RIGHT PANEL — Form ═══════════ */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
+        <div className="w-full max-w-[420px] space-y-6 animate-scale-in">
+
+          {/* Back link */}
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors font-semibold">
+            <ChevronLeft size={15} /> Back to Home
+          </Link>
+
+          <div className="glass-card rounded-2xl p-8 space-y-6 relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.8)', borderColor: '#a3a09333' }}>
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-custom-terra/0 via-custom-terra to-custom-terra/0" />
+
+            {!googleOnboarding ? (
+              <>
+                {/* Header */}
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+                    style={{ background: 'rgba(230,98,64,0.1)', border: '1px solid rgba(230,98,64,0.2)' }}>
+                    <Camera size={22} className="text-custom-terra" />
+                  </div>
+                  <h2 className="font-display font-black text-2xl text-custom-taupe">Citizen Sign In</h2>
+                  <p className="text-xs text-custom-sage">Submit road photos, log GPS pins, and track complaint statuses.</p>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="p-3.5 rounded-xl flex items-center gap-2 text-xs font-bold animate-fade-down"
+                    style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.25)', color: '#fb7185' }}>
+                    ⚠️ {error}
+                  </div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <InputField
+                    label="Citizen Email Address"
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="name@domain.com"
+                    icon={Mail}
+                    accentColor="#10b981"
+                  />
+                  <InputField
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    icon={Lock}
+                    accentColor="#10b981"
+                    hint={
+                      <Link to="/forgot-password" className="text-[11px] font-bold hover:opacity-80 transition-opacity" style={{ color: '#10b981' }}>
+                        Forgot Password?
+                      </Link>
+                    }
+                  />
+
+                  <button type="submit" disabled={loading}
+                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white mt-2 cursor-pointer disabled:opacity-50"
+                    style={{
+                      background: loading ? 'rgba(230,98,64,0.5)' : '#e66240',
+                      boxShadow: loading ? 'none' : '0 8px 24px rgba(230,98,64,0.3)'
+                    }}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Authenticating...
+                      </>
+                    ) : (
+                      <>Sign In as Citizen <ArrowRight size={16} /></>
+                    )}
+                  </button>
+                </form>
+
+
+
+                {/* Register Link */}
+                <p className="text-center text-xs text-slate-400">
+                  Don't have an account?{' '}
+                  <Link to="/register" className="font-bold hover:opacity-80 transition-opacity" style={{ color: '#10b981' }}>
+                    Register here
+                  </Link>
+                </p>
+
+                {/* Feature bullets */}
+                <div className="pt-3 border-t border-white/5 space-y-2">
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Citizen Access Includes:</p>
+                  {['AI Camera Pothole Detection & Analysis', 'GPS-Pinned Interactive Google Maps Reporting'].map(f => (
+                    <div key={f} className="flex items-center gap-2 text-[11px] text-slate-400">
+                      <CheckCircle2 size={12} className="text-emerald-400 shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              /* ── Google Onboarding ── */
+              <>
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                    style={{ background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)' }}>
+                    <Phone size={22} className="text-cyan-400" />
+                  </div>
+                  <h2 className="font-display font-black text-2xl text-white">Complete Registration</h2>
+                  <p className="text-xs text-slate-400">
+                    Welcome <span className="text-white font-bold">{onboardingName}</span>! Please add your phone number to complete setup.
+                  </p>
+                </div>
+
+                {error && (
+                  <div className="p-3.5 rounded-xl text-xs font-bold"
+                    style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.25)', color: '#fb7185' }}>
+                    ⚠️ {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleOnboardingSubmit} className="space-y-4">
+                  <InputField
+                    label="Phone Number"
+                    type="tel"
+                    value={onboardingPhone}
+                    onChange={e => setOnboardingPhone(e.target.value)}
+                    placeholder="9876543210"
+                    icon={Phone}
+                    accentColor="#06b6d4"
+                  />
+                  <button type="submit" disabled={loading}
+                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 text-white cursor-pointer disabled:opacity-50 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', boxShadow: '0 8px 24px rgba(6,182,212,0.25)' }}
+                  >
+                    {loading ? (
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Completing...</>
+                    ) : (
+                      <>Complete Profile & Sign In <ArrowRight size={16} /></>
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

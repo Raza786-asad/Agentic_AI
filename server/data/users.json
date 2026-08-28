@@ -1,0 +1,44 @@
+[
+  {
+    "id": "usr_17a0e86b-4a84-4827-82f9-1783f96fc7f4",
+    "name": "Rahul Sharma",
+    "phone": "9876543210",
+    "email": "citizen@roadguard.org",
+    "salt": "af1bee31ecc43546483637dbe8a10a2a",
+    "passwordHash": "4f160e2d321ac091f49c72bd3dbcd7ce82186316accbfa5be94ce6ae868012cc",
+    "role": "user",
+    "isGoogle": false,
+    "createdAt": "2026-08-21T17:10:01.751Z"
+  },
+  {
+    "id": "usr_30aca159-8403-4cf6-a9f9-55f0402ffb7d",
+    "name": "Asad Raza",
+    "phone": "9876543211",
+    "email": "asad.raza@gmail.com",
+    "salt": "754d90e02d8794f6bec79f0601792c91",
+    "passwordHash": "202c41a68c3fc2b74cd9b2eba5f2bca97da8ec354e90b1f7bc9f2d87160afd79",
+    "role": "user",
+    "isGoogle": false,
+    "createdAt": "2026-08-21T17:10:01.766Z"
+  },
+  {
+    "id": "usr_26dcbc79-d993-48e9-beda-023082740695",
+    "name": "Rahul Sharma",
+    "phone": "1234567891",
+    "email": "rahul.sharma@gmail.com",
+    "role": "user",
+    "isGoogle": true,
+    "googleId": "g_ab5wf0p",
+    "createdAt": "2026-08-21T17:19:44.553Z"
+  },
+  {
+    "id": "usr_f3bed3ce-ce84-409f-bc32-d1c120cef696",
+    "name": "Guest Citizen",
+    "phone": "9102510563",
+    "email": "guest.citizen@gmail.com",
+    "role": "user",
+    "isGoogle": true,
+    "googleId": "g_k13krf3",
+    "createdAt": "2026-08-21T18:06:03.001Z"
+  }
+]

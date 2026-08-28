@@ -7,7 +7,7 @@ export default function NotificationPanel({ notifications, onClose, onMarkAllRea
       <div className="p-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-cyan-400" />
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider">Alert Center</h4>
+          <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider">Alert Center</h4>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -16,7 +16,7 @@ export default function NotificationPanel({ notifications, onClose, onMarkAllRea
           >
             <CheckCheck className="w-3 h-3" /> Clear
           </button>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-100">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>

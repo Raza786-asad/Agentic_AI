@@ -236,7 +236,7 @@ const handleAgentTask = async (req, res) => {
 `;
 }
 
-module.exports = {
+export {
   getAvailableAgents,
   executeAgentTask
 };

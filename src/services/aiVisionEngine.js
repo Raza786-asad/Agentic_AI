@@ -30,6 +30,7 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
         let roadAsphaltPixels = 0;
         let shadowCavityPixels = 0;
         let vibrantNonRoadPixels = 0;
+        let skinPixels = 0;
         let edgeGradients = 0;
         let totalBrightness = 0;
 
@@ -50,14 +51,23 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
             const minChannel = Math.min(r, g, b);
             const colorSaturation = maxChannel - minChannel;
 
-            // 1. Asphalt Surface Check: Low saturation (< 18) and mid-range gray brightness (45 - 160)
-            const isAsphaltColor = colorSaturation < 18 && brightness >= 45 && brightness <= 160;
+            // 1. Human Skin Tone Detection (Face, arms, selfies)
+            const isSkin = (
+              (r > 85 && g > 40 && b > 20 && Math.abs(r - g) > 10 && r > g && g >= b) ||
+              (r > 140 && g > 90 && b > 65 && r > g && g > b && colorSaturation > 20)
+            );
+            if (isSkin) {
+              skinPixels++;
+            }
+
+            // 2. Road Asphalt Spectrum (Gravel, dark/mid-gray asphalt surface: saturation < 28, brightness 15-185)
+            const isAsphaltColor = (colorSaturation < 28 && brightness >= 15 && brightness <= 185 && !isSkin);
             if (isAsphaltColor) {
               roadAsphaltPixels++;
             }
 
-            // 2. Cavity Shadow Basin Check: Dark shadow (brightness 15 - 50) and low saturation
-            const isDarkCavity = brightness >= 15 && brightness < 50 && colorSaturation < 18;
+            // 3. Dark Cavity Shadow Basin (Pothole core depression on asphalt: brightness 5-75)
+            const isDarkCavity = (brightness >= 5 && brightness < 75 && colorSaturation < 28 && !isSkin);
             if (isDarkCavity) {
               shadowCavityPixels++;
               foundPoints = true;
@@ -67,21 +77,17 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
               if (y > maxY) maxY = y;
             }
 
-            // 3. Vibrant Non-Road Color Check (Skin, clothes, foliage, sky, bright indoor objects)
-            const isVibrantColor = colorSaturation > 25;
-            const isSkyBlue = b > 120 && b > r + 20;
-            const isFoliageGreen = g > 100 && g > r + 15;
-            const isWarmOrSkin = r > 130 && (g > 85 || b < 85) && colorSaturation > 20;
-
-            if (isVibrantColor || isSkyBlue || isFoliageGreen || isWarmOrSkin) {
+            // 4. Vibrant Non-Road (Greenery, sky, bright vibrant clothing)
+            const isVibrantNonRoad = (colorSaturation > 38 || (b > 125 && b > r + 20) || (g > 110 && g > r + 20));
+            if (isVibrantNonRoad || isSkin) {
               vibrantNonRoadPixels++;
             }
 
-            // 4. Horizontal Edge Contrast Check
+            // 5. Edge Contrast Gradient (Fracture lines, pothole rims, jagged road breaks)
             if (x < width - 1) {
               const nextIdx = (y * width + (x + 1)) * 4;
               const nextBrightness = (pixels[nextIdx] + pixels[nextIdx + 1] + pixels[nextIdx + 2]) / 3;
-              if (Math.abs(brightness - nextBrightness) > 30) {
+              if (Math.abs(brightness - nextBrightness) > 18) {
                 edgeGradients++;
               }
             }
@@ -89,37 +95,45 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
         }
 
         const avgBrightness = totalBrightness / totalPixels;
+        const skinRatio = Math.round((skinPixels / totalPixels) * 100);
         const roadSpectrumRatio = Math.max(0, Math.min(100, Math.round((roadAsphaltPixels / totalPixels) * 100)));
         const cavityRatio = Math.max(0, Math.min(100, Math.round((shadowCavityPixels / totalPixels) * 100)));
         const nonRoadRatio = Math.max(0, Math.min(100, Math.round((vibrantNonRoadPixels / totalPixels) * 100)));
         const edgeDensityRatio = Math.max(0, Math.min(100, Math.round((edgeGradients / totalPixels) * 100)));
 
-        // Guard against pure black unreadable canvas or corrupted load
-        const isUnreadableCanvas = avgBrightness < 5 || cavityRatio > 75;
+        const isUnreadableCanvas = avgBrightness < 5;
 
         // Semantic Filename Keyword Check
         const fileNameLower = fileName.toLowerCase();
-        const roadKeywords = ['pothole', 'road', 'crack', 'street', 'asphalt', 'hole', 'damage', 'hwy', 'highway', 'lane', 'sector18', 'flyover'];
-        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'image', 'photo', 'img'];
+        const roadKeywords = ['pothole', 'road', 'crack', 'street', 'asphalt', 'hole', 'damage', 'hwy', 'highway', 'lane', 'sector18', 'flyover', 'plymouth'];
+        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'index', 'sidebar', 'poster', 'camera_photo', 'captured', 'camera', 'human', 'portrait', 'user', 'profile'];
 
         const hasExplicitRoadKeyword = roadKeywords.some(k => fileNameLower.includes(k));
-        const hasExplicitNonRoadKeyword = nonRoadKeywords.filter(k => !['image', 'photo', 'img'].includes(k)).some(k => fileNameLower.includes(k));
+        const hasExplicitNonRoadKeyword = nonRoadKeywords.some(k => fileNameLower.includes(k));
 
-        // Strict Machine Learning Pipeline Validation Rules:
-        let stage1Pass = roadSpectrumRatio >= 30 && nonRoadRatio <= 28;
-        let stage2Pass = cavityRatio >= 5 && cavityRatio <= 45;
-        let stage3Pass = edgeDensityRatio >= 3;
+        // ACCURATE DECISION RULES:
+        const isHumanOrNonRoad = skinRatio >= 4 || (nonRoadRatio >= 45 && skinRatio >= 2) || hasExplicitNonRoadKeyword;
 
-        let isPotholeDetected = stage1Pass && stage2Pass && stage3Pass && !isUnreadableCanvas;
+        let isPotholeDetected = false;
+        let defectType = 'None';
+        let locationType = isHumanOrNonRoad ? 'Non-Road' : 'Road';
 
-        if (hasExplicitNonRoadKeyword) {
-          isPotholeDetected = false;
-        } else if (hasExplicitRoadKeyword) {
-          isPotholeDetected = true;
-          stage1Pass = true;
-          stage2Pass = true;
-          stage3Pass = true;
+        if (!isHumanOrNonRoad && !isUnreadableCanvas) {
+          if (cavityRatio >= 2.0 && edgeDensityRatio >= 2.5) {
+            isPotholeDetected = true;
+            defectType = 'Pothole';
+          } else if (edgeDensityRatio >= 5.0) {
+            isPotholeDetected = true;
+            defectType = 'Crack';
+          } else if (hasExplicitRoadKeyword && cavityRatio >= 1.0) {
+            isPotholeDetected = true;
+            defectType = 'Pothole';
+          }
         }
+
+        let stage1Pass = locationType === 'Road';
+        let stage2Pass = cavityRatio >= 2.0;
+        let stage3Pass = edgeDensityRatio >= 2.5;
 
         // Bounding box calculations
         let boxX = 25, boxY = 25, boxWidth = 50, boxHeight = 45;
