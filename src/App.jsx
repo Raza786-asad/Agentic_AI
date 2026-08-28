@@ -142,7 +142,7 @@ function AppContent() {
       fetch('/api/complaints',  { headers }).then(r => r.json()),
       fetch('/api/work-orders', { headers }).then(r => r.json()),
     ]).then(([repRes, cmpRes, woRes]) => {
-      if (repRes.status === 'fulfilled' && repRes.value.success && repRes.value.reports.length > 0) {
+      if (repRes.status === 'fulfilled' && repRes.value?.success && Array.isArray(repRes.value?.reports) && repRes.value.reports.length > 0) {
         // Merge API reports into defects list (map to existing defect shape)
         const apiDefects = repRes.value.reports.map(r => ({
           id:           r.id,
@@ -171,7 +171,7 @@ function AppContent() {
         });
       }
 
-      if (cmpRes.status === 'fulfilled' && cmpRes.value.success && cmpRes.value.complaints.length > 0) {
+      if (cmpRes.status === 'fulfilled' && cmpRes.value?.success && Array.isArray(cmpRes.value?.complaints) && cmpRes.value.complaints.length > 0) {
         const apiComplaints = cmpRes.value.complaints.map(c => ({
           id:             c.id,
           citizenName:    c.citizenName,
@@ -191,7 +191,7 @@ function AppContent() {
         });
       }
 
-      if (woRes.status === 'fulfilled' && woRes.value.success && woRes.value.workOrders.length > 0) {
+      if (woRes.status === 'fulfilled' && woRes.value?.success && Array.isArray(woRes.value?.workOrders) && woRes.value.workOrders.length > 0) {
         const apiWorkOrders = woRes.value.workOrders.map(w => ({
           id:               w.id,
           defectId:         w.defectId,
