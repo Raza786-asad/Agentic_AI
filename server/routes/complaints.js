@@ -95,6 +95,14 @@ router.post('/', verifyToken, async (req, res) => {
       [id, reportId || null, user.id, user.name, description, location, imageUrl || null, aiSimilarity || 0, matchedDefectId || null]
     );
 
+    // Attach missing joined fields so the frontend state doesn't default to mock data
+    const userResult = await pool.query('SELECT phone, address, email FROM users WHERE id = $1', [user.id]);
+    if (userResult.rows.length > 0) {
+      rows[0].citizen_phone = userResult.rows[0].phone;
+      rows[0].citizen_address = userResult.rows[0].address;
+      rows[0].citizen_email = userResult.rows[0].email;
+    }
+
     res.status(201).json({ success: true, complaint: rowToComplaint(rows[0]) });
   } catch (err) {
     console.error('[Complaints POST]', err);

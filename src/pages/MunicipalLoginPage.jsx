@@ -191,30 +191,7 @@ export default function MunicipalLoginPage({ onLogin }) {
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="relative flex items-center">
-              <div className="flex-1 h-px bg-custom-sage/20" />
-              <span className="px-3 text-[10px] font-bold text-custom-sage uppercase tracking-wider">or continue with</span>
-              <div className="flex-1 h-px bg-custom-sage/20" />
-            </div>
 
-            {/* Google Login */}
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-3 transition-all duration-200 text-custom-taupe hover:-translate-y-0.5 cursor-pointer disabled:opacity-50"
-              style={{ background: 'white', border: '1px solid rgba(163,160,147,0.3)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
-            >
-              {/* Google logo SVG */}
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-                <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.859-3.048.859-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-                <path d="M3.964 10.705A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.705V4.963H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.037l3.007-2.332z" fill="#FBBC05"/>
-                <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.963L3.964 7.295C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-              </svg>
-              Continue with Google
-            </button>
 
             <div className="border-t border-custom-sage/20 pt-4 text-center">
               <p className="text-xs text-custom-sage font-medium">

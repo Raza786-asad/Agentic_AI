@@ -264,24 +264,7 @@ export default function LoginPage({ onLogin }) {
                   </button>
                 </form>
 
-                {/* Divider */}
-                <div className="relative flex items-center">
-                  <div className="flex-1 h-px bg-white/5" />
-                  <span className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">or continue with</span>
-                  <div className="flex-1 h-px bg-white/5" />
-                </div>
 
-                {/* Google Buttons */}
-                <div className="grid grid-cols-1 gap-2">
-                  <button type="button" onClick={handleGoogleLogin}
-                    className="py-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2 transition-all duration-200 text-slate-300 cursor-pointer"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                  >
-                    <span className="font-black text-emerald-400 text-sm">G</span> Continue with Google
-                  </button>
-                </div>
 
                 {/* Register Link */}
                 <p className="text-center text-xs text-slate-400">

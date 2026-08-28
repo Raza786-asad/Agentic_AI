@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ROAD-NEX-BACKEND.onrender.com/api/:path*"
+      "destination": "https://roadnex.onrender.com*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://ROAD-NEX-BACKEND.onrender.com/uploads/:path*"
+      "destination": "https://roadnex.onrender.com*"
     },
     {
       "source": "/(.*)",
