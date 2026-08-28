@@ -13,12 +13,22 @@ export default function ProtectedRoute({ children, allowedRole, currentUser, loa
 
   if (!currentUser) {
     // Redirect to login based on required role
-    return <Navigate to={allowedRole === 'admin' ? '/admin/login' : '/login'} replace />;
+    const loginTarget = allowedRole === 'admin' 
+      ? '/admin/login' 
+      : allowedRole === 'municipal' 
+        ? '/municipal/login' 
+        : '/login';
+    return <Navigate to={loginTarget} replace />;
   }
 
   if (currentUser.role !== allowedRole) {
     // Role mismatch: redirect to their respective dashboard
-    return <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/user/dashboard'} replace />;
+    const dashboardTarget = currentUser.role === 'admin' 
+      ? '/admin/dashboard' 
+      : currentUser.role === 'municipal' 
+        ? '/municipal/dashboard' 
+        : '/user/dashboard';
+    return <Navigate to={dashboardTarget} replace />;
   }
 
   return children;

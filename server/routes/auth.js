@@ -1,6 +1,17 @@
 import express from 'express';
 import crypto from 'crypto';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
 import * as db from '../services/db.js';
+
+try {
+  admin.initializeApp();
+} catch (e) {
+  console.log('Firebase admin initialization issue:', e.message);
+}
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'roadnex_secret_key_123';
@@ -53,12 +64,18 @@ export function verifyToken(req, res, next) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
+// Store admin details in memory since admin is not DB-backed
+let adminAvatarUrl = null;
+let adminName = 'Md. Asad Raza';
+let adminPhone = '+919102510563';
+let adminAddress = 'Vadlamudi,Guntur-522213';
+
 /**
  * POST /api/auth/register
  */
 router.post('/register', async (req, res) => {
   try {
-    const { name, phone, email, password, confirmPassword } = req.body;
+    const { name, phone, email, password, confirmPassword, role } = req.body;
 
     if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ success: false, error: 'All required fields must be filled.' });
@@ -73,7 +90,9 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please enter a valid phone number.' });
     }
 
-    const user  = await db.createUser({ name, phone, email, password });
+    const registrationRole = (role === 'municipal' || role === 'user') ? role : 'user';
+
+    const user  = await db.createUser({ name, phone, email, password, role: registrationRole });
     const token = generateToken({ id: user.id, email: user.email, role: user.role, name: user.name });
 
     return res.status(201).json({ success: true, message: 'Account created successfully.', user, token });
@@ -109,15 +128,60 @@ router.post('/login', async (req, res) => {
  */
 router.post('/google', async (req, res) => {
   try {
-    const { email, name, googleId } = req.body;
-    if (!email || !name) {
-      return res.status(400).json({ success: false, error: 'Google login information is incomplete.' });
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Firebase token is missing.' });
     }
 
-    const result = await db.createOrUpdateGoogleUser({ email, name, googleId });
-    const token  = generateToken({ id: result.user.id, email: result.user.email, role: result.user.role, name: result.user.name });
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(token);
+    } catch (err) {
+      return res.status(401).json({ success: false, error: 'Invalid Firebase token.' });
+    }
 
-    return res.status(200).json({ success: true, user: result.user, token, onboardingRequired: result.onboardingRequired });
+    const { email, name, uid: googleId } = decodedToken;
+    const result = await db.createOrUpdateGoogleUser({ email, name: name || 'Google User', googleId });
+    const jwtToken = generateToken({ id: result.user.id, email: result.user.email, role: result.user.role, name: result.user.name });
+
+    return res.status(200).json({ success: true, user: result.user, token: jwtToken, onboardingRequired: result.onboardingRequired });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/google-municipal
+ * Google login for Municipal Staff — email must already exist with role='municipal'.
+ */
+router.post('/google-municipal', async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Firebase token is missing.' });
+    }
+
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(token);
+    } catch (err) {
+      return res.status(401).json({ success: false, error: 'Invalid Firebase token.' });
+    }
+
+    const { email } = decodedToken;
+
+    // Look up the user by email in the database
+    const user = await db.findUserByEmail(email);
+
+    if (!user) {
+      return res.status(403).json({ success: false, error: 'No registered municipal staff account found for this Google account. Please register first.' });
+    }
+    if (user.role !== 'municipal') {
+      return res.status(403).json({ success: false, error: 'This Google account is not associated with a Municipal Staff account. Use the Citizen Portal instead.' });
+    }
+
+    const jwtToken = generateToken({ id: user.id, email: user.email, role: user.role, name: user.name });
+    return res.status(200).json({ success: true, user, token: jwtToken });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -161,7 +225,16 @@ router.post('/admin-login', (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid admin credentials.' });
     }
 
-    const adminUser = { id: 'admin_01', name: 'Cmdr. A. Mehta', title: 'Chief Urban Engineer', email: sysId, role: 'admin' };
+    const adminUser = { 
+      id: 'admin_01', 
+      name: adminName, 
+      title: 'Chief Urban Engineer', 
+      email: sysId, 
+      phone: adminPhone,
+      address: adminAddress,
+      role: 'admin', 
+      avatarUrl: adminAvatarUrl 
+    };
     const token     = generateToken({ id: adminUser.id, email: adminUser.email, role: adminUser.role, name: adminUser.name });
 
     return res.status(200).json({ success: true, user: adminUser, token });
@@ -190,7 +263,16 @@ router.get('/verify', async (req, res) => {
       const sysId = process.env.ADMIN_ID || 'admin@roadguard.gov.in';
       return res.status(200).json({
         success: true,
-        user: { id: 'admin_01', name: 'Cmdr. A. Mehta', title: 'Chief Urban Engineer', email: sysId, role: 'admin' }
+        user: { 
+          id: 'admin_01', 
+          name: adminName, 
+          title: 'Chief Urban Engineer', 
+          email: sysId, 
+          phone: adminPhone,
+          address: adminAddress,
+          role: 'admin', 
+          avatarUrl: adminAvatarUrl 
+        }
       });
     }
 
@@ -201,6 +283,107 @@ router.get('/verify', async (req, res) => {
     }
 
     return res.status(200).json({ success: true, user });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PATCH /api/auth/profile
+ * Updates user profile details
+ */
+router.patch('/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, phone, address } = req.body;
+    if (req.user.role === 'admin') {
+      adminName = name || adminName;
+      adminPhone = phone || adminPhone;
+      adminAddress = address || adminAddress;
+      const sysId = process.env.ADMIN_ID || 'vu.241fa04475@gmail.com';
+      const updatedAdmin = { 
+        id: 'admin_01', 
+        name: adminName, 
+        title: 'Chief Urban Engineer', 
+        email: sysId, 
+        phone: adminPhone,
+        address: adminAddress,
+        role: 'admin',
+        avatarUrl: adminAvatarUrl
+      };
+      return res.status(200).json({ success: true, user: updatedAdmin });
+    }
+
+    const updatedUser = await db.updateUserProfile(req.user.id, { name, phone, address });
+    return res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auth/profile-photo
+ * Uploads a profile photo for the current user.
+ * Body: multipart form-data { photo: <file> }
+ */
+const __authFilename = fileURLToPath(import.meta.url);
+const __authDirname  = path.dirname(__authFilename);
+
+const avatarStorage = multer.diskStorage({
+  destination(req, file, cb) {
+    const uploadsDir = path.join(__authDirname, '../../server/uploads');
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+    cb(null, uploadsDir);
+  },
+  filename(req, file, cb) {
+    const ext = path.extname(file.originalname) || '.jpg';
+    const safeName = `avatar_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${ext}`;
+    cb(null, safeName);
+  }
+});
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  fileFilter(req, file, cb) {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    cb(null, allowed.includes(file.mimetype));
+  }
+});
+
+router.post('/profile-photo', verifyToken, avatarUpload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No photo file received.' });
+    }
+
+    const avatarUrl = `/uploads/${req.file.filename}`;
+
+    if (req.user.role === 'admin') {
+      // Admin is not DB-backed, return URL for client-side persistence
+      adminAvatarUrl = avatarUrl;
+      return res.status(200).json({ success: true, avatarUrl });
+    }
+
+    const updatedUser = await db.updateUserAvatar(req.user.id, avatarUrl);
+    return res.status(200).json({ success: true, user: updatedUser, avatarUrl });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/auth/profile-photo
+ * Removes the profile photo for the current user.
+ */
+router.delete('/profile-photo', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role === 'admin') {
+      adminAvatarUrl = null;
+      return res.status(200).json({ success: true, avatarUrl: null });
+    }
+
+    const updatedUser = await db.updateUserAvatar(req.user.id, null);
+    return res.status(200).json({ success: true, user: updatedUser, avatarUrl: null });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
   }

@@ -13,10 +13,11 @@ CREATE TABLE IF NOT EXISTS users (
   id            VARCHAR(64)  PRIMARY KEY,
   name          VARCHAR(128) NOT NULL,
   phone         VARCHAR(20)  DEFAULT '',
+  address       TEXT         DEFAULT NULL,
   email         VARCHAR(255) NOT NULL UNIQUE,
   salt          VARCHAR(64)  DEFAULT NULL,
   password_hash VARCHAR(128) DEFAULT NULL,
-  role          VARCHAR(16)  NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  role          VARCHAR(16)  NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'municipal')),
   is_google     BOOLEAN      NOT NULL DEFAULT FALSE,
   google_id     VARCHAR(64)  DEFAULT NULL,
   avatar_url    TEXT         DEFAULT NULL,
@@ -103,6 +104,11 @@ CREATE TABLE IF NOT EXISTS work_orders (
   contractor          VARCHAR(128)  DEFAULT 'Unassigned',
   target_completion   VARCHAR(64)   DEFAULT NULL,
   estimated_cost      VARCHAR(64)   DEFAULT '₹0',
+  repaired_image_url  TEXT          DEFAULT NULL,
+  repaired_lat        NUMERIC(10,7) DEFAULT NULL,
+  repaired_lng        NUMERIC(10,7) DEFAULT NULL,
+  repaired_at         TIMESTAMPTZ   DEFAULT NULL,
+  municipal_id        VARCHAR(64)   REFERENCES users(id) ON DELETE SET NULL,
   created_at          TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
@@ -139,3 +145,6 @@ VALUES (
   NOW()
 )
 ON CONFLICT (email) DO NOTHING;
+
+-- Add whatsapp_verified column to complaints
+ALTER TABLE complaints ADD COLUMN IF NOT EXISTS whatsapp_verified BOOLEAN NOT NULL DEFAULT FALSE;

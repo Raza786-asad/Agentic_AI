@@ -26,7 +26,7 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // ─── Serve uploaded images as static files ────────────────────────────────────
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', cors(), express.static(uploadsDir));
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api', apiRoutes);

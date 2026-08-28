@@ -4,171 +4,19 @@ import {
   Building2, ArrowRight, ShieldCheck, MapPin, Activity, Camera,
   AlertOctagon, Sparkles, Layers, Cpu, GitCommit, CheckCircle2,
   Droplets, Navigation, ExternalLink, ChevronRight, Zap,
-  BarChart3, Shield, TrendingUp, Clock, Users, Star, Menu, X, Loader2
+  BarChart3, Shield, TrendingUp, Clock, Users, Star, Menu, X, Loader2, Wrench
 } from 'lucide-react';
-
-/* ─── Unique Orbital Lidar Scan Animation ─── */
-function SplashScreen({ onComplete }) {
-  const [stage, setStage] = useState(0);
-
-  useEffect(() => {
-    // Stage 0: 0s - Global radar spinning, searching
-    // Stage 1: 2.5s - Anomaly detected, radar locks, screen zooms in
-    // Stage 2: 5s - Drone dispatched, repairing
-    // Stage 3: 7.5s - Resolved, system online
-    const t1 = setTimeout(() => setStage(1), 2500); 
-    const t2 = setTimeout(() => setStage(2), 5000); 
-    const t3 = setTimeout(() => setStage(3), 7500); 
-    const t4 = setTimeout(() => onComplete(), 9000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [onComplete]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-[#020617] overflow-hidden flex flex-col items-center justify-center font-mono">
-      <style>{`
-        @keyframes radar-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes blink {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(0.8); }
-        }
-        @keyframes orbital-zoom {
-          0% { transform: scale(1) translate(0, 0); }
-          100% { transform: scale(6) translate(15%, -15%); }
-        }
-        .city-grid {
-          position: absolute;
-          inset: -50%;
-          background-image: 
-            linear-gradient(rgba(14, 165, 233, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
-          background-size: 40px 40px;
-          border-radius: 50%;
-          opacity: 0.5;
-        }
-        .radar-sweep {
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          background: conic-gradient(from 0deg, transparent 70%, rgba(14, 165, 233, 0.1) 80%, rgba(14, 165, 233, 0.8) 100%);
-          animation: radar-spin 2s linear infinite;
-        }
-        .anomaly {
-          position: absolute;
-          width: 8px;
-          height: 8px;
-          background: #f43f5e;
-          border-radius: 50%;
-          box-shadow: 0 0 15px 4px rgba(244,63,94,0.8);
-          animation: blink 1s infinite;
-        }
-        .anomaly.resolved {
-          background: #10b981;
-          box-shadow: 0 0 15px 4px rgba(16,185,129,0.8);
-          animation: none;
-        }
-        .zoom-container {
-          position: absolute;
-          inset: 0;
-          transition: transform 2.5s cubic-bezier(0.87, 0, 0.13, 1);
-        }
-        .zoom-container.zoomed {
-          transform: scale(6) translate(15%, -15%);
-        }
-      `}</style>
-
-      {/* The Global View Container */}
-      <div className={`zoom-container ${stage >= 1 ? 'zoomed' : ''}`}>
-        
-        {/* Radar Map Base */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-sky-500/20 rounded-full">
-          <div className="city-grid"></div>
-          
-          {/* Radar Sweep (Stops spinning when locked) */}
-          <div className="radar-sweep" style={{ animationPlayState: stage >= 1 ? 'paused' : 'running', opacity: stage >= 1 ? 0.2 : 1 }}></div>
-          
-          {/* Concentric Rings */}
-          <div className="absolute inset-10 border border-sky-500/10 rounded-full"></div>
-          <div className="absolute inset-32 border border-sky-500/20 rounded-full"></div>
-          <div className="absolute inset-56 border border-sky-500/10 rounded-full"></div>
-          
-          {/* Crosshairs */}
-          <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-sky-500/30"></div>
-          <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-sky-500/30"></div>
-
-          {/* Map Nodes / Anomalies */}
-          <div className={`anomaly ${stage >= 3 ? 'resolved' : ''}`} style={{ top: '35%', left: '35%' }}></div>
-          <div className="anomaly resolved" style={{ top: '65%', left: '70%', opacity: 0.5 }}></div>
-          <div className="anomaly resolved" style={{ top: '20%', left: '50%', opacity: 0.3 }}></div>
-        </div>
-      </div>
-
-      {/* Static Overlays (HUD) */}
-      <div className="absolute inset-0 z-30 pointer-events-none p-6">
-        
-        {/* Top Left Title */}
-        <div className="absolute top-6 left-6">
-          <h1 className="text-sky-400 font-display font-black tracking-widest text-xl">ORBITAL // LIDAR</h1>
-          <p className="text-sky-500/70 text-xs">SATELLITE DOWNLINK ACTIVE</p>
-        </div>
-
-        {/* Top Right Status */}
-        <div className="absolute top-6 right-6 text-right">
-          <div className="text-xs text-sky-400">ALTITUDE: <span className="text-white">400 KM</span></div>
-          <div className="text-xs text-sky-400">LAT: <span className="text-white">28.7041° N</span></div>
-          <div className="text-xs text-sky-400">LON: <span className="text-white">77.1025° E</span></div>
-        </div>
-
-        {/* Dynamic Center Lock-On Box (Appears at Stage 1) */}
-        {stage >= 1 && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-rose-500/50 bg-rose-500/5 transition-colors duration-1000 flex items-center justify-center animate-fade-in" style={{ borderColor: stage >= 3 ? 'rgba(16,185,129,0.5)' : 'rgba(244,63,94,0.5)' }}>
-            
-            {/* Corner Brackets */}
-            <div className={`absolute -top-2 -left-2 w-6 h-6 border-t-2 border-l-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
-            <div className={`absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
-            <div className={`absolute -bottom-2 -left-2 w-6 h-6 border-b-2 border-l-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
-            <div className={`absolute -bottom-2 -right-2 w-6 h-6 border-b-2 border-r-2 transition-colors duration-1000 ${stage >= 3 ? 'border-emerald-500' : 'border-rose-500'}`}></div>
-
-            {/* Target Label */}
-            <div className={`absolute -top-8 left-0 text-xs font-bold px-2 py-1 transition-colors duration-1000 ${stage >= 3 ? 'bg-emerald-500 text-emerald-950' : 'bg-rose-500 text-rose-950'}`}>
-              {stage === 1 ? 'TARGET LOCKED' : stage === 2 ? 'DISPATCHING DRONE...' : 'REPAIR CONFIRMED'}
-            </div>
-
-            {/* Drone Repair Laser (Stage 2) */}
-            {stage === 2 && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[200px] h-[2px] bg-emerald-400 shadow-[0_0_20px_5px_rgba(16,185,129,0.8)] animate-[spin_1s_linear_infinite] origin-left"></div>
-            )}
-          </div>
-        )}
-
-        {/* Bottom Left Logs */}
-        <div className="absolute bottom-6 left-6 w-80">
-          <div className="text-[10px] text-sky-400/80 mb-2 border-b border-sky-900/50 pb-1">TERMINAL LOGS</div>
-          <div className="space-y-1 text-[10px]">
-            <div className="text-sky-300"> {'>'} INITIALIZING GLOBAL SCAN... OK</div>
-            <div className="text-sky-300"> {'>'} CALIBRATING SENSORS... OK</div>
-            {stage >= 1 && <div className="text-rose-400"> {'>'} CRITICAL INFRASTRUCTURE BREACH DETECTED.</div>}
-            {stage >= 1 && <div className="text-rose-400"> {'>'} ISOLATING COORDINATES...</div>}
-            {stage >= 2 && <div className="text-amber-400"> {'>'} DISPATCHING AUTOMATED REPAIR UNIT.</div>}
-            {stage >= 3 && <div className="text-emerald-400 font-bold"> {'>'} STRUCTURAL INTEGRITY RESTORED.</div>}
-          </div>
-        </div>
-
-        {/* Bottom Right Progress Bar */}
-        <div className="absolute bottom-6 right-6 w-64 text-right">
-          <div className="text-[10px] text-sky-400 mb-2">
-            OVERALL NETWORK STATUS: {stage >= 3 ? <span className="text-emerald-400">SECURE</span> : <span className="text-rose-400">COMPROMISED</span>}
-          </div>
-          <div className="w-full h-1 bg-sky-950 rounded overflow-hidden">
-            <div className="h-full bg-sky-500 transition-all duration-[7500ms] ease-linear" style={{ width: stage >= 3 ? '100%' : '10%' }}></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
+/* ─── Haversine Distance Utility ─── */
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in km
 }
 
 /* ─── Animated Counter ─── */
@@ -204,10 +52,10 @@ function AnimatedCounter({ target, suffix = '', duration = 1800 }) {
 /* ─── Feature Card ─── */
 function FeatureCard({ icon: Icon, title, desc, accent = 'cyan', delay = 0 }) {
   const colors = {
-    cyan:    { bg: 'rgba(6,182,212,0.1)',  border: 'rgba(6,182,212,0.25)',  text: '#22d3ee' },
-    emerald: { bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)', text: '#34d399' },
-    violet:  { bg: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.25)', text: '#a78bfa' },
-    amber:   { bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)', text: '#fbbf24' },
+    cyan:    { bg: 'rgba(230,98,64,0.1)',   border: 'rgba(230,98,64,0.25)',  text: '#e66240' },
+    emerald: { bg: 'rgba(163,160,147,0.1)', border: 'rgba(163,160,147,0.25)', text: '#a3a093' },
+    violet:  { bg: 'rgba(55,65,81,0.1)',    border: 'rgba(55,65,81,0.25)',    text: '#374151' },
+    amber:   { bg: 'rgba(249,246,239,0.5)', border: 'rgba(163,160,147,0.25)', text: '#e66240' },
   };
   const c = colors[accent] || colors.cyan;
 
@@ -222,8 +70,8 @@ function FeatureCard({ icon: Icon, title, desc, accent = 'cyan', delay = 0 }) {
       >
         <Icon size={20} style={{ color: c.text }} />
       </div>
-      <h3 className="font-display font-bold text-sm text-slate-100 mb-2">{title}</h3>
-      <p className="text-[12px] text-slate-400 leading-relaxed">{desc}</p>
+      <h3 className="font-display font-bold text-sm text-custom-taupe mb-2">{title}</h3>
+      <p className="text-[12px] text-custom-sage leading-relaxed">{desc}</p>
     </div>
   );
 }
@@ -233,16 +81,15 @@ function StepCard({ num, title, desc, isLast, delay = 0 }) {
   return (
     <div className="animate-fade-up flex flex-col items-center text-center relative" style={{ animationDelay: `${delay}ms` }}>
       <div className="relative mb-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10">
-          <span className="font-mono font-black text-lg text-cyan-400">{num}</span>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'rgba(230,98,64,0.1)', border: '1px solid rgba(230,98,64,0.3)', boxShadow: '0 8px 24px rgba(230,98,64,0.15)' }}>
+          <span className="font-mono font-black text-lg text-custom-terra">{num}</span>
         </div>
-        <div className="absolute -inset-1 bg-cyan-400 rounded-2xl blur opacity-10 group-hover:opacity-25 transition" />
       </div>
       {!isLast && (
-        <div className="hidden lg:block absolute left-full top-7 w-full h-0.5 bg-gradient-to-r from-cyan-500/30 to-transparent -translate-y-1/2 z-0" style={{ width: 'calc(100% - 56px)', left: '50%' }} />
+        <div className="hidden lg:block absolute left-full top-7 w-full h-0.5 bg-gradient-to-r from-custom-terra/30 to-transparent -translate-y-1/2 z-0" style={{ width: 'calc(100% - 56px)', left: '50%' }} />
       )}
-      <h4 className="font-display font-bold text-sm text-slate-100 mb-1">{title}</h4>
-      <p className="text-[11px] text-slate-400 leading-relaxed max-w-[140px]">{desc}</p>
+      <h4 className="font-display font-bold text-sm text-custom-taupe mb-1">{title}</h4>
+      <p className="text-[11px] text-custom-sage leading-relaxed max-w-[140px]">{desc}</p>
     </div>
   );
 }
@@ -251,9 +98,53 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [showSplash, setShowSplash] = useState(() => {
-    return !sessionStorage.getItem('roadnex_splash_seen');
-  });
+  const [userLoc, setUserLoc] = useState(null);
+  const [liveReports, setLiveReports] = useState([]);
+  const [liveStats, setLiveStats] = useState({ queue: 0, highestRisk: 'Low', majorAlert: null });
+
+  useEffect(() => {
+    // 1. Get User Location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.log('Geolocation denied/failed', err)
+      );
+    }
+
+    // 2. Fetch Live Telemetry Data
+    const fetchLive = async () => {
+      try {
+        const res = await fetch('/api/reports/public-live');
+        const data = await res.json();
+        if (data.success) {
+          setLiveReports(data.reports);
+          
+          const queue = data.reports.length;
+          let highestScore = 0;
+          let major = null;
+
+          data.reports.forEach(r => {
+            if (r.priority_score > highestScore) {
+              highestScore = r.priority_score;
+              major = r;
+            }
+          });
+
+          setLiveStats({
+            queue,
+            highestRisk: highestScore >= 80 ? 'High Alert' : highestScore >= 50 ? 'Moderate' : 'Low',
+            majorAlert: major
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch live telemetry', err);
+      }
+    };
+
+    fetchLive();
+    const interval = setInterval(fetchLive, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -265,6 +156,50 @@ export default function LandingPage() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     setMenuOpen(false);
   };
+
+  const livePins = React.useMemo(() => {
+    if (!liveReports || liveReports.length === 0) {
+      return [
+        { top: '32%', left: '24%', color: 'rose',   label: 'Pothole (98%)' },
+        { top: '65%', left: '50%', color: 'orange', label: 'Road Crack' },
+        { top: '22%', right: '22%', color: 'cyan',  label: 'Flood Hotspot', ping: true },
+        { top: '50%', left: '15%', color: 'violet', label: 'Structural Risk' },
+      ];
+    }
+    const topReports = [...liveReports].slice(0, 4);
+    return topReports.map((r, i) => {
+      let top = '50%';
+      let left = '50%';
+      let distance = '';
+      
+      if (userLoc && r.lat && r.lng) {
+        const distKm = getDistance(userLoc.lat, userLoc.lng, r.lat, r.lng);
+        distance = distKm < 1 ? '<1km' : distKm.toFixed(1) + 'km';
+        const scale = 5; 
+        const dLat = r.lat - userLoc.lat;
+        const dLng = r.lng - userLoc.lng;
+        top = `${50 - (dLat * 111 * scale)}%`;
+        left = `${50 + (dLng * 111 * Math.cos(userLoc.lat * Math.PI/180) * scale)}%`;
+        
+        top = `${Math.max(10, Math.min(85, parseFloat(top)))}%`;
+        left = `${Math.max(10, Math.min(85, parseFloat(left)))}%`;
+      } else {
+         const staticPos = [{top:'32%', left:'24%'}, {top:'65%', left:'50%'}, {top:'22%', left:'78%'}, {top:'50%', left:'15%'}];
+         top = staticPos[i % 4].top;
+         left = staticPos[i % 4].left;
+      }
+  
+      let color = 'cyan';
+      if (r.severity === 'High' || r.priority_score > 70) color = 'rose';
+      else if (r.severity === 'Medium') color = 'orange';
+  
+      return {
+        top, left, color,
+        label: `${r.defect_type}${distance ? ' ('+distance+')' : ''}`,
+        ping: r.id === liveStats.majorAlert?.id
+      }
+    });
+  }, [liveReports, userLoc, liveStats.majorAlert]);
 
   const features = [
     { title: 'AI Road Defect Detection',     desc: 'Real-time classification of potholes, cracks, and structural wear using computer vision.',      icon: Cpu,              accent: 'cyan' },
@@ -295,44 +230,26 @@ export default function LandingPage() {
     { label: 'Active Cities',          value: '12',   suffix: '',   icon: Building2,  accent: '#f59e0b' },
   ];
 
-  if (showSplash) {
-    return (
-      <SplashScreen onComplete={() => {
-        sessionStorage.setItem('roadnex_splash_seen', 'true');
-        setShowSplash(false);
-      }} />
-    );
-  }
+
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col relative overflow-hidden" style={{ backgroundColor: '#0a0e1a' }}>
+    <div className="min-h-screen text-custom-taupe flex flex-col relative overflow-hidden" style={{ backgroundColor: '#f9f6ef' }}>
 
       {/* ── BACKGROUND ORBS ── */}
-      <div className="orb-cyan absolute w-[700px] h-[700px] -top-48 -left-48 pointer-events-none" />
-      <div className="orb-violet absolute w-[600px] h-[600px] top-1/2 -right-48 pointer-events-none" />
-      <div className="orb-emerald absolute w-[500px] h-[500px] bottom-0 left-1/3 pointer-events-none" />
-      <div className="bg-grid absolute inset-0 pointer-events-none opacity-60" />
+      <div className="absolute w-[700px] h-[700px] -top-48 -left-48 pointer-events-none rounded-full blur-[120px] opacity-20" style={{ background: '#a3a093' }} />
+      <div className="absolute w-[600px] h-[600px] top-1/2 -right-48 pointer-events-none rounded-full blur-[120px] opacity-10" style={{ background: '#e66240' }} />
+      <div className="absolute w-[500px] h-[500px] bottom-0 left-1/3 pointer-events-none rounded-full blur-[120px] opacity-15" style={{ background: '#374151' }} />
+      <div className="bg-grid absolute inset-0 pointer-events-none opacity-40" />
 
       {/* ══════════════ HEADER ══════════════ */}
       <header className={`h-18 px-6 lg:px-12 flex items-center justify-between sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'glass border-b border-white/5 shadow-xl shadow-black/30' : 'bg-transparent'
+        scrolled ? 'glass border-b border-custom-sage/30 shadow-xl shadow-custom-taupe/5' : 'bg-transparent'
       }`} style={{ height: '72px' }}>
 
         {/* Brand */}
-        <div className="flex items-center gap-3 animate-fade-down">
-          <div className="relative w-10 h-10">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-              <Navigation size={18} className="text-white rotate-45" />
-            </div>
-            <div className="absolute -inset-0.5 bg-cyan-400 rounded-xl blur opacity-20 animate-pulse-glow" />
-          </div>
-          <div>
-            <h1 className="font-display font-black text-lg tracking-tight text-white leading-none flex items-center gap-2">
-              ROADNEX
-              <span className="badge badge-cyan text-[9px]">v2.0</span>
-            </h1>
-            <p className="text-[10px] text-slate-400 font-medium">Smart Infrastructure AI</p>
-          </div>
+        <div className="flex flex-col gap-0.5 animate-fade-down pt-2">
+          <img src="/logo.png" alt="ROADNEX" className="h-12 object-contain" />
+          <p className="text-[10px] text-custom-sage font-medium">Smart Infrastructure AI</p>
         </div>
 
         {/* Desktop Nav */}
@@ -340,8 +257,14 @@ export default function LandingPage() {
           {[['Home', null], ['About', 'about'], ['How It Works', 'how-it-works'], ['Features', 'features'], ['Portals', 'portals']].map(([label, id]) => (
             <button
               key={label}
-              onClick={() => id ? scrollTo(id) : window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.5)] cursor-pointer"
+              onClick={() => {
+                if (id) {
+                  scrollTo(id);
+                } else {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className="text-xs font-semibold text-custom-sage hover:text-custom-terra transition-all duration-200 cursor-pointer"
             >
               {label}
             </button>
@@ -352,21 +275,21 @@ export default function LandingPage() {
         <div className="hidden md:flex items-center gap-3 animate-fade-down delay-200">
           <button
             onClick={() => navigate('/login')}
-            className="btn-ghost text-xs py-2 px-4 rounded-xl"
+            className="text-xs py-2 px-4 rounded-xl text-custom-taupe hover:bg-black/5 transition-all font-bold"
           >
             Citizen Sign In
           </button>
           <button
             onClick={() => navigate('/admin/login')}
-            className="btn-primary text-xs py-2 px-4 rounded-xl"
-            style={{ animationDuration: '0s' }}
+            className="text-xs py-2 px-4 rounded-xl text-white font-bold flex items-center gap-1.5 transition-all"
+            style={{ background: '#374151' }}
           >
             Admin Panel <ArrowRight size={14} />
           </button>
         </div>
 
         {/* Mobile Hamburger */}
-        <button className="md:hidden text-slate-300" onClick={() => setMenuOpen(!menuOpen)}>
+        <button className="md:hidden text-custom-taupe" onClick={() => setMenuOpen(!menuOpen)}>
           {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </header>
@@ -396,116 +319,119 @@ export default function LandingPage() {
             {/* Left: Headline */}
             <div className="lg:col-span-7 space-y-8">
               <div className="animate-fade-up">
-                <span className="badge badge-cyan text-[10px] px-3 py-1.5 mb-6 inline-flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping inline-block" />
-                  Smart Infrastructure Operations — Live
-                </span>
 
                 <h1 className="font-display font-black text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight mt-4">
-                  <span className="text-white">Smarter</span>{' '}
-                  <span className="text-white">Roads.</span>
+                  <span className="text-custom-taupe">Smarter</span>{' '}
+                  <span className="text-custom-taupe">Roads.</span>
                   <br />
-                  <span className="gradient-text-hero">Faster Response.</span>
+                  <span className="text-custom-terra">Faster Response.</span>
                   <br />
-                  <span className="text-white">Safer Cities.</span>
+                  <span className="text-custom-taupe">Safer Cities.</span>
                 </h1>
               </div>
 
-              <p className="animate-fade-up delay-200 text-slate-400 text-base leading-relaxed max-w-xl font-medium">
-                ROADNEX leverages <span className="text-cyan-400 font-semibold">computer vision AI</span>, GIS mapping, and predictive prioritization to monitor road degradation, flag waterlogging hazards, and automate municipal maintenance dispatch loops.
+              <p className="animate-fade-up delay-200 text-custom-sage text-base leading-relaxed max-w-xl font-medium">
+                ROADNEX leverages <span className="text-custom-terra font-bold">computer vision AI</span>, GIS mapping, and predictive prioritization to monitor road degradation, flag waterlogging hazards, and automate municipal maintenance dispatch loops.
               </p>
 
               <div className="animate-fade-up delay-300 flex flex-wrap gap-4">
-                <button onClick={() => navigate('/login')} className="btn-primary btn-emerald">
+                <button onClick={() => navigate('/login')} className="text-sm py-3 px-6 rounded-xl text-white font-bold flex items-center gap-2 transition-all hover:-translate-y-0.5" style={{ background: '#e66240', boxShadow: '0 8px 24px rgba(230,98,64,0.3)' }}>
                   <Camera size={16} /> Report a Road Issue
                 </button>
-                <button onClick={() => scrollTo('features')} className="btn-ghost">
+                <button onClick={() => scrollTo('features')} className="text-sm py-3 px-6 rounded-xl text-custom-taupe font-bold flex items-center gap-2 transition-all hover:bg-black/5 border border-custom-sage/30">
                   Explore ROADNEX <ChevronRight size={16} />
                 </button>
               </div>
 
-              {/* Metrics Row */}
-              <div className="animate-fade-up delay-400 grid grid-cols-4 gap-4 pt-8 border-t border-white/5">
-                {stats.map((s, i) => {
-                  const Icon = s.icon;
-                  return (
-                    <div key={i} className="space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <Icon size={12} style={{ color: s.accent }} />
-                        <p className="font-display font-black text-2xl text-white">
-                          <AnimatedCounter target={s.value} suffix={s.suffix} />
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-tight">{s.label}</p>
-                    </div>
-                  );
-                })}
-              </div>
+
             </div>
 
             {/* Right: Live Telemetry Card */}
             <div className="lg:col-span-5 animate-fade-right delay-300">
-              <div className="glass-card rounded-3xl p-6 relative overflow-hidden animate-float">
+              <div className="glass-card rounded-3xl p-6 relative overflow-hidden animate-float" style={{ background: 'rgba(255,255,255,0.8)', borderColor: 'rgba(163,160,147,0.3)' }}>
                 {/* Glow accent */}
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-500 to-transparent" />
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-custom-terra to-transparent" />
 
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                    <p className="text-xs font-mono font-bold text-slate-300">TELEMETRY MONITOR: ACTIVE</p>
+                    <span className="w-2 h-2 rounded-full bg-custom-terra animate-pulse" />
+                    <p className="text-xs font-mono font-bold text-custom-taupe">TELEMETRY MONITOR: ACTIVE</p>
                   </div>
-                  <span className="badge badge-cyan text-[9px]">GPS LOCKED</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(163,160,147,0.1)', color: '#a3a093', border: '1px solid rgba(163,160,147,0.3)' }}>GPS LOCKED</span>
                 </div>
 
                 {/* Animated Map */}
-                <div className="h-60 rounded-2xl bg-slate-950 border border-slate-800/80 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-grid-fine opacity-50" />
+                <div className="h-60 rounded-2xl bg-white border border-custom-sage/30 relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #a3a093 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
                   {/* Road lines */}
-                  <div className="absolute w-[3px] h-full bg-slate-800/60 left-1/3" />
-                  <div className="absolute w-[3px] h-full bg-slate-800/60 left-2/3" />
-                  <div className="absolute h-[3px] w-full bg-slate-800/60 top-1/2" />
-                  <div className="absolute h-[3px] w-full bg-slate-800/60 top-1/4" />
-                  {/* Scanner */}
-                  <div className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent top-1/3 animate-scanline" />
+                  <div className="absolute w-[3px] h-full bg-custom-sage/20 left-1/3" />
+                  <div className="absolute w-[3px] h-full bg-custom-sage/20 left-2/3" />
+                  <div className="absolute h-[3px] w-full bg-custom-sage/20 top-1/2" />
+                  <div className="absolute h-[3px] w-full bg-custom-sage/20 top-1/4" />
+                  {/* Scanner Area */}
+                  <div className="absolute left-0 right-0 h-32 animate-scanline pointer-events-none" style={{
+                    background: 'linear-gradient(to bottom, transparent, rgba(230,98,64,0.02) 40%, rgba(230,98,64,0.1) 80%, rgba(230,98,64,0.3) 100%)',
+                    borderBottom: '2px solid rgba(230,98,64,0.6)',
+                    boxShadow: '0 4px 16px rgba(230,98,64,0.1)'
+                  }} />
                   {/* Pins */}
-                  {[
-                    { top: '32%', left: '24%', color: 'rose',   label: 'Pothole (98%)' },
-                    { top: '65%', left: '50%', color: 'orange', label: 'Road Crack' },
-                    { top: '22%', right: '22%', color: 'cyan',  label: 'Flood Hotspot', ping: true },
-                    { top: '50%', left: '15%', color: 'violet', label: 'Structural Risk' },
-                  ].map((pin, i) => {
+                  {livePins.map((pin, i) => {
                     const colorMap = {
-                      rose:   { border: '#f43f5e', bg: 'rgba(244,63,94,0.15)',   text: '#fca5a5', dot: '#f43f5e' },
-                      orange: { border: '#f97316', bg: 'rgba(249,115,22,0.15)',  text: '#fdba74', dot: '#f97316' },
-                      cyan:   { border: '#06b6d4', bg: 'rgba(6,182,212,0.15)',   text: '#67e8f9', dot: '#06b6d4' },
-                      violet: { border: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', text: '#c4b5fd', dot: '#8b5cf6' },
+                      rose:   { border: '#e66240', bg: 'rgba(230,98,64,0.15)',   text: '#e66240', dot: '#e66240' },
+                      orange: { border: '#e66240', bg: 'rgba(230,98,64,0.15)',  text: '#e66240', dot: '#e66240' },
+                      cyan:   { border: '#a3a093', bg: 'rgba(163,160,147,0.15)',   text: '#a3a093', dot: '#a3a093' },
+                      violet: { border: '#374151', bg: 'rgba(55,65,81,0.15)', text: '#374151', dot: '#374151' },
                     };
                     const c = colorMap[pin.color];
                     return (
-                      <div key={i} className="absolute flex flex-col items-center" style={{ top: pin.top, left: pin.left, right: pin.right }}>
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center ring-4 ${pin.ping ? 'animate-ping' : ''}`}
-                          style={{ background: c.bg, border: `1px solid ${c.border}`, ringColor: c.bg }}>
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
+                      <div key={i} className="absolute flex flex-col items-center hover:scale-110 transition-transform duration-300 cursor-default" style={{ top: pin.top, left: pin.left, right: pin.right, zIndex: 10 }}>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center relative shadow-sm"
+                          style={{ background: c.bg, border: `2px solid ${c.border}`, boxShadow: `0 0 0 4px ${c.bg}` }}>
+                          <span className="w-2 h-2 rounded-full" style={{ background: c.dot }} />
+                          {pin.ping && (
+                            <span className="absolute inset-0 rounded-full animate-radar-ping" style={{ border: `2px solid ${c.dot}` }} />
+                          )}
                         </div>
-                        <span className="text-[8px] px-1.5 py-0.5 mt-1 rounded font-mono whitespace-nowrap"
-                          style={{ background: 'rgba(2,6,23,0.9)', border: `1px solid rgba(255,255,255,0.08)`, color: c.text }}>
+                        <span className="text-[8px] px-2 py-1 mt-2.5 rounded font-mono whitespace-nowrap font-bold shadow-sm"
+                          style={{ background: 'rgba(249,246,239,0.95)', border: `1px solid ${c.border}`, color: c.text, boxShadow: `0 2px 8px ${c.bg}` }}>
                           {pin.label}
                         </span>
                       </div>
                     );
                   })}
-                  <p className="text-[9px] text-slate-600 font-mono absolute bottom-2.5 right-3 select-none">AI Vector Layer v2.0</p>
+                  <p className="text-[9px] text-custom-sage font-mono absolute bottom-2.5 right-3 select-none z-10">AI Vector Layer</p>
                 </div>
+
+                {/* Major Alert Section */}
+                {liveStats.majorAlert && userLoc && (
+                  <div className="mt-4 p-3 rounded-xl flex flex-col gap-1 border animate-fade-in" style={{ backgroundColor: 'rgba(230,98,64,0.05)', borderColor: 'rgba(230,98,64,0.2)' }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <AlertOctagon size={14} className="text-custom-terra animate-pulse" />
+                        <span className="text-xs font-bold text-custom-taupe">MAJOR HAZARD NEARBY</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-custom-terra font-bold border border-custom-terra/30 px-2 py-0.5 rounded bg-custom-terra/10">
+                        {liveStats.majorAlert.priority_score > 80 ? 'CRITICAL RISK' : 'HIGH RISK'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-custom-sage mt-1 font-medium">
+                      {liveStats.majorAlert.defect_type} detected 
+                      <strong className="text-custom-terra ml-1">
+                        {getDistance(userLoc.lat, userLoc.lng, liveStats.majorAlert.lat, liveStats.majorAlert.lng).toFixed(1)} km
+                      </strong> away.
+                    </p>
+                  </div>
+                )}
 
                 {/* Mini Stats */}
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   {[
-                    { label: 'AI Queue', value: '12 Active', accent: '#06b6d4' },
-                    { label: 'Risk Level', value: 'High Alert', accent: '#f43f5e' },
-                    { label: 'Dispatch ETA', value: '38 min', accent: '#10b981' },
+                    { label: 'AI Queue', value: `${liveStats.queue} Active`, accent: '#e66240' },
+                    { label: 'Risk Level', value: liveStats.highestRisk, accent: liveStats.highestRisk === 'High Alert' ? '#e66240' : '#a3a093' },
+                    { label: 'Dispatch ETA', value: liveStats.queue > 0 ? '38 min' : '0 min', accent: '#a3a093' },
                   ].map((s, i) => (
-                    <div key={i} className="bg-slate-950/80 p-3 rounded-xl border border-white/5">
-                      <p className="text-[9px] text-slate-500 uppercase tracking-wide font-bold">{s.label}</p>
+                    <div key={i} className="bg-white p-3 rounded-xl border border-custom-sage/30">
+                      <p className="text-[9px] text-custom-sage uppercase tracking-wide font-bold">{s.label}</p>
                       <p className="font-mono font-bold text-xs mt-0.5" style={{ color: s.accent }}>{s.value}</p>
                     </div>
                   ))}
@@ -516,88 +442,119 @@ export default function LandingPage() {
         </section>
 
         {/* ══════════════ PORTALS ══════════════ */}
-        <section id="portals" className="relative px-6 lg:px-12 py-20 border-y border-white/5">
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 to-transparent pointer-events-none" />
+        <section id="portals" className="relative px-6 lg:px-12 py-20 border-y border-custom-sage/30">
+          <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(249,246,239,0) 0%, rgba(163,160,147,0.1) 100%)' }} />
           <div className="max-w-5xl mx-auto relative">
             <div className="text-center mb-14">
-              <p className="badge badge-violet mb-4 mx-auto">Platform Access</p>
-              <h2 className="font-display font-black text-4xl sm:text-5xl text-white mb-3">
+              <p className="text-[10px] px-3 py-1.5 mb-4 mx-auto inline-flex items-center gap-2 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(163,160,147,0.1)', color: '#374151', border: '1px solid rgba(163,160,147,0.3)' }}>Platform Access</p>
+              <h2 className="font-display font-black text-4xl sm:text-5xl text-custom-taupe mb-3">
                 Choose Your Portal
               </h2>
-              <p className="text-slate-400 text-sm max-w-md mx-auto">
+              <p className="text-custom-sage text-sm max-w-md mx-auto font-medium">
                 Connect as a reporting citizen or city management supervisor. Each portal is tailored with role-specific tools.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Citizen Portal */}
-              <div className="animate-fade-left card-premium p-8 group relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500/0 via-emerald-500 to-emerald-500/0 opacity-60" />
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors duration-500" />
+              <div className="animate-fade-left card-premium p-8 group relative overflow-hidden flex flex-col justify-between" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(163,160,147,0.3)' }}>
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-custom-terra to-transparent opacity-60" />
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full transition-colors duration-500" style={{ background: 'rgba(230,98,64,0.05)' }} />
                 <div className="relative z-10 space-y-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                    style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    <Camera size={24} className="text-emerald-400" />
+                    style={{ background: 'rgba(230,98,64,0.1)', border: '1px solid rgba(230,98,64,0.2)' }}>
+                    <Camera size={24} className="text-custom-terra" />
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-display font-bold text-xl text-white">Citizen Portal</h3>
-                      <span className="badge badge-emerald">Public</span>
+                      <h3 className="font-display font-bold text-xl text-custom-taupe">Citizen Portal</h3>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(230,98,64,0.1)', color: '#e66240', border: '1px solid rgba(230,98,64,0.3)' }}>Public</span>
                     </div>
-                    <p className="text-sm text-slate-400 leading-relaxed">
+                    <p className="text-sm text-custom-sage leading-relaxed font-medium">
                       Snap road issues, record GPS pin logs, file official infrastructure complaints, and monitor repair status in real-time.
                     </p>
                   </div>
                   <ul className="space-y-2">
                     {['AI-powered road defect analysis', 'GPS-tagged complaint filing', 'Live repair status tracking'].map(f => (
-                      <li key={f} className="flex items-center gap-2.5 text-xs text-slate-300">
-                        <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                      <li key={f} className="flex items-center gap-2.5 text-xs text-custom-taupe font-medium">
+                        <CheckCircle2 size={13} className="text-custom-terra shrink-0" />
                         {f}
                       </li>
                     ))}
                   </ul>
                   <button onClick={() => navigate('/login')}
-                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #0d9488)', boxShadow: '0 8px 24px rgba(16,185,129,0.25)' }}
-                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 32px rgba(16,185,129,0.4)'}
-                    onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(16,185,129,0.25)'}
+                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white hover:-translate-y-1 cursor-pointer"
+                    style={{ background: '#e66240', boxShadow: '0 8px 24px rgba(230,98,64,0.25)' }}
                   >
                     Enter Citizen Portal <ArrowRight size={16} />
                   </button>
                 </div>
               </div>
 
-              {/* Admin Portal */}
-              <div className="animate-fade-right delay-100 card-premium p-8 group relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500/0 via-cyan-500 to-cyan-500/0 opacity-60" />
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-cyan-500/5 group-hover:bg-cyan-500/10 transition-colors duration-500" />
+              {/* Municipal Staff Portal */}
+              <div className="animate-fade-up delay-75 card-premium p-8 group relative overflow-hidden flex flex-col justify-between" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(163,160,147,0.3)' }}>
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-custom-terra to-transparent opacity-60" />
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full transition-colors duration-500" style={{ background: 'rgba(230,98,64,0.05)' }} />
                 <div className="relative z-10 space-y-5">
                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                    style={{ background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)' }}>
-                    <Shield size={24} className="text-cyan-400" />
+                    style={{ background: 'rgba(230,98,64,0.1)', border: '1px solid rgba(230,98,64,0.2)' }}>
+                    <Wrench size={24} className="text-custom-terra" />
                   </div>
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-display font-bold text-xl text-white">Municipal Command</h3>
-                      <span className="badge badge-rose">Admin Only</span>
+                      <h3 className="font-display font-bold text-xl text-custom-taupe">Municipal Staff</h3>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(230,98,64,0.1)', color: '#e66240', border: '1px solid rgba(230,98,64,0.3)' }}>Agency</span>
                     </div>
-                    <p className="text-sm text-slate-400 leading-relaxed">
-                      Analyze city-wide heatmaps, inspect automated dispatch work orders, monitor contractor SLAs, and view active priority queues.
+                    <p className="text-sm text-custom-sage leading-relaxed font-medium">
+                      Claim dispatched maintenance orders, upload photographic resolution proof, and verify physical repair coordinates.
                     </p>
                   </div>
                   <ul className="space-y-2">
-                    {['City-wide defect heatmap & GIS', 'Automated work order management', 'Contractor SLA monitoring'].map(f => (
-                      <li key={f} className="flex items-center gap-2.5 text-xs text-slate-300">
-                        <CheckCircle2 size={13} className="text-cyan-400 shrink-0" />
+                    {['Assigned ticket operation maps', 'Integrated GPS verification checks', 'Photo resolution upload logs'].map(f => (
+                      <li key={f} className="flex items-center gap-2.5 text-xs text-custom-taupe font-medium">
+                        <CheckCircle2 size={13} className="text-custom-terra shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <button onClick={() => navigate('/municipal/login')}
+                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white hover:-translate-y-1 cursor-pointer"
+                    style={{ background: '#e66240', boxShadow: '0 8px 24px rgba(230,98,64,0.25)' }}
+                  >
+                    Enter Contractor Portal <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Admin Portal */}
+              <div className="animate-fade-right delay-150 card-premium p-8 group relative overflow-hidden flex flex-col justify-between" style={{ background: 'rgba(255,255,255,0.7)', borderColor: 'rgba(163,160,147,0.3)' }}>
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-custom-taupe to-transparent opacity-60" />
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full transition-colors duration-500" style={{ background: 'rgba(55,65,81,0.05)' }} />
+                <div className="relative z-10 space-y-5">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: 'rgba(55,65,81,0.1)', border: '1px solid rgba(55,65,81,0.2)' }}>
+                    <Shield size={24} className="text-custom-taupe" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-display font-bold text-xl text-custom-taupe">Command Center</h3>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(55,65,81,0.1)', color: '#374151', border: '1px solid rgba(55,65,81,0.3)' }}>Admin Only</span>
+                    </div>
+                    <p className="text-sm text-custom-sage leading-relaxed font-medium">
+                      Analyze city-wide heatmaps, inspect automated dispatch work orders, monitor contractor SLAs, and verify resolved issues.
+                    </p>
+                  </div>
+                  <ul className="space-y-2">
+                    {['City-wide defect heatmap & GIS', 'Verify municipal repair logs', 'Manage active contractor queues'].map(f => (
+                      <li key={f} className="flex items-center gap-2.5 text-xs text-custom-taupe font-medium">
+                        <CheckCircle2 size={13} className="text-custom-taupe shrink-0" />
                         {f}
                       </li>
                     ))}
                   </ul>
                   <button onClick={() => navigate('/admin/login')}
-                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white"
-                    style={{ background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', boxShadow: '0 8px 24px rgba(6,182,212,0.25)' }}
-                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 32px rgba(6,182,212,0.4)'}
-                    onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 24px rgba(6,182,212,0.25)'}
+                    className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white hover:-translate-y-1 cursor-pointer"
+                    style={{ background: '#374151', boxShadow: '0 8px 24px rgba(55,65,81,0.25)' }}
                   >
                     Enter Command Center <ArrowRight size={16} />
                   </button>
@@ -610,11 +567,11 @@ export default function LandingPage() {
         {/* ══════════════ HOW IT WORKS ══════════════ */}
         <section id="how-it-works" className="px-6 lg:px-12 py-24 max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <span className="badge badge-amber mb-4 inline-flex">The Process</span>
-            <h2 className="font-display font-black text-4xl sm:text-5xl text-white mb-3">
+            <span className="text-[10px] px-3 py-1.5 mb-4 mx-auto inline-flex items-center gap-2 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(230,98,64,0.1)', color: '#e66240', border: '1px solid rgba(230,98,64,0.3)' }}>The Process</span>
+            <h2 className="font-display font-black text-4xl sm:text-5xl text-custom-taupe mb-3">
               Municipal Maintenance Loop
             </h2>
-            <p className="text-slate-400 text-sm max-w-md mx-auto">
+            <p className="text-custom-sage text-sm max-w-md mx-auto font-medium">
               Our automated system bridges the gap between citizen detection and verified engineer closure — fully tracked at every step.
             </p>
           </div>
@@ -631,14 +588,14 @@ export default function LandingPage() {
 
         {/* ══════════════ FEATURES ══════════════ */}
         <section id="features" className="px-6 lg:px-12 py-24 relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(249,246,239,0) 0%, rgba(163,160,147,0.1) 100%)' }} />
           <div className="max-w-7xl mx-auto relative">
             <div className="text-center mb-16">
-              <span className="badge badge-cyan mb-4 inline-flex">Capabilities</span>
-              <h2 className="font-display font-black text-4xl sm:text-5xl text-white mb-3">
-                Core Infrastructure <span className="gradient-text-cyan">Intelligence</span>
+              <span className="text-[10px] px-3 py-1.5 mb-4 mx-auto inline-flex items-center gap-2 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(163,160,147,0.1)', color: '#374151', border: '1px solid rgba(163,160,147,0.3)' }}>Capabilities</span>
+              <h2 className="font-display font-black text-4xl sm:text-5xl text-custom-taupe mb-3">
+                Core Infrastructure <span className="text-custom-terra">Intelligence</span>
               </h2>
-              <p className="text-slate-400 text-sm max-w-md mx-auto">
+              <p className="text-custom-sage text-sm max-w-md mx-auto font-medium">
                 Designed with state-of-the-art tools to support modern civil engineering automation at scale.
               </p>
             </div>
@@ -651,99 +608,65 @@ export default function LandingPage() {
         </section>
 
         {/* ══════════════ ABOUT / STATS ══════════════ */}
-        <section id="about" className="px-6 lg:px-12 py-24 border-t border-white/5">
+        <section id="about" className="px-6 lg:px-12 py-24 border-t border-custom-sage/30">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-6 animate-fade-left">
-              <span className="badge badge-emerald">About ROADNEX</span>
-              <h2 className="font-display font-black text-4xl sm:text-5xl text-white leading-tight">
-                Built for the <span className="gradient-text-emerald">Cities of Tomorrow</span>
+              <span className="text-[10px] px-3 py-1.5 inline-flex items-center gap-2 rounded-full font-bold uppercase tracking-wider" style={{ background: 'rgba(163,160,147,0.1)', color: '#374151', border: '1px solid rgba(163,160,147,0.3)' }}>About ROADNEX</span>
+              <h2 className="font-display font-black text-4xl sm:text-5xl text-custom-taupe leading-tight">
+                Built for the <span className="text-custom-terra">Cities of Tomorrow</span>
               </h2>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <p className="text-custom-sage text-sm leading-relaxed font-medium">
                 Traditional municipal road inspection takes weeks and operates on slow complaint registers. ROADNEX automates the full lifecycle — from citizens' mobile snap uploads through AI validation, prioritization, contractor dispatching, and repair verification.
               </p>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <p className="text-custom-sage text-sm leading-relaxed font-medium">
                 By fusing GIS telemetry mapping and rainfall data forecasting, municipal operations officers get actionable risk indicators before potholes morph into severe roadway failures.
               </p>
-              <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                <ShieldCheck size={20} className="text-emerald-400 shrink-0" />
-                <span className="text-sm font-semibold text-slate-200">ISO 9001 Smart City Operations Standards Compliant</span>
-              </div>
+
             </div>
 
-            <div className="grid grid-cols-2 gap-4 animate-fade-right delay-200">
-              {[
-                { value: '80', suffix: '%',   label: 'Faster Dispatching',     accent: '#06b6d4' },
-                { value: '10', suffix: 'k+',  label: 'Reports Ingested',       accent: '#6366f1' },
-                { value: '92', suffix: '%',   label: 'Deduplication Rate',     accent: '#8b5cf6' },
-                { value: '100', suffix: '%',  label: 'Verifiable Auditing',    accent: '#10b981' },
-              ].map((s, i) => (
-                <div key={i} className="stat-card text-center" style={{ '--card-accent': s.accent }}>
-                  <h4 className="font-display font-black text-4xl mb-1" style={{ color: s.accent }}>
-                    <AnimatedCounter target={s.value} suffix={s.suffix} />
-                  </h4>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{s.label}</p>
-                </div>
-              ))}
+            <div className="w-full h-full min-h-[300px] md:min-h-[380px] rounded-3xl border border-custom-sage/30 overflow-hidden shadow-2xl animate-fade-right delay-200 bg-slate-950/20 relative group">
+              <video 
+                src="/videos/promo.mp4" 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="w-full h-full object-cover rounded-3xl"
+              />
+              {/* Premium dark glow border */}
+              <div className="absolute inset-0 border-2 border-custom-terra/20 rounded-3xl pointer-events-none group-hover:border-custom-terra/40 transition-colors duration-300" />
             </div>
           </div>
         </section>
 
-        {/* ══════════════ TRUST STRIP ══════════════ */}
-        <section className="px-6 lg:px-12 py-12 border-t border-white/5">
-          <div className="max-w-4xl mx-auto text-center space-y-4">
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest">Trusted Infrastructure Technology</p>
-            <div className="flex items-center justify-center gap-8 flex-wrap">
-              {['Smart City Initiative', 'ISO 9001 Certified', 'GIS-Powered', 'ML Model v2.0', 'Real-time Telemetry'].map(t => (
-                <div key={t} className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                  <Star size={12} className="text-amber-400" />
-                  {t}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+
       </main>
 
       {/* ══════════════ FOOTER ══════════════ */}
-      <footer className="border-t border-white/5 bg-slate-950/80">
+      <footer className="border-t border-custom-sage/30 bg-[#f4f0e6]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
             <div className="md:col-span-2 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center">
-                  <Navigation size={16} className="text-white rotate-45" />
-                </div>
-                <span className="font-display font-black text-lg text-white">ROADNEX</span>
-              </div>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
+              <img src="/logo.png" alt="ROADNEX" className="h-14 object-contain" />
+              <p className="text-sm text-custom-sage font-medium leading-relaxed max-w-xs">
                 AI-powered smart city platform for road defect detection, municipal dispatch automation, and urban infrastructure intelligence.
               </p>
             </div>
             <div className="space-y-3">
-              <h5 className="font-display font-bold text-sm text-slate-200">Platform</h5>
-              <ul className="space-y-2 text-xs text-slate-400">
+              <h5 className="font-display font-bold text-sm text-custom-taupe">Platform</h5>
+              <ul className="space-y-2 text-xs text-custom-sage font-medium">
                 {['Citizen Portal', 'Admin Dashboard', 'GIS Mapping', 'Analytics'].map(l => (
-                  <li key={l}><a href="#" className="hover:text-white transition-colors">{l}</a></li>
+                  <li key={l}><a href="#" className="hover:text-custom-terra transition-colors">{l}</a></li>
                 ))}
               </ul>
             </div>
             <div className="space-y-3">
-              <h5 className="font-display font-bold text-sm text-slate-200">Legal</h5>
-              <ul className="space-y-2 text-xs text-slate-400">
+              <h5 className="font-display font-bold text-sm text-custom-taupe">Legal</h5>
+              <ul className="space-y-2 text-xs text-custom-sage font-medium">
                 {['Privacy Policy', 'Terms of Service', 'API Console', 'Documentation'].map(l => (
-                  <li key={l}><a href="#" className="hover:text-white transition-colors flex items-center gap-1">{l}</a></li>
+                  <li key={l}><a href="#" className="hover:text-custom-terra transition-colors flex items-center gap-1">{l}</a></li>
                 ))}
               </ul>
-            </div>
-          </div>
-          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-500">© {new Date().getFullYear()} ROADNEX Inc. Intelligent Urban Infrastructure Solutions.</p>
-            <div className="flex items-center gap-4 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                All Systems Operational
-              </span>
-              <span>v2.0.0</span>
             </div>
           </div>
         </div>

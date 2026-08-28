@@ -4,6 +4,8 @@ import {
   Mail, Lock, ArrowRight, CheckCircle2, ChevronLeft,
   Eye, EyeOff, Phone, Navigation, Zap, Shield, Camera, MapPin
 } from 'lucide-react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
 
 /* ─── Input Field ─── */
 function InputField({ label, type: initialType, value, onChange, placeholder, icon: Icon, hint, extra, required = true, accentColor = '#10b981' }) {
@@ -91,14 +93,16 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
-  const handleGoogleLogin = async (mockEmail, mockName) => {
+  const handleGoogleLogin = async () => {
     setError('');
     setLoading(true);
     try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: mockEmail, name: mockName, googleId: 'g_' + Math.random().toString(36).slice(2, 9) })
+        body: JSON.stringify({ token: idToken })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Google login failed.');
@@ -140,70 +144,48 @@ export default function LoginPage({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden" style={{ backgroundColor: '#0a0e1a', color: '#e2e8f0' }}>
+    <div className="min-h-screen flex relative overflow-hidden" style={{ backgroundColor: '#f9f6ef', color: '#374151' }}>
 
       {/* ── BG Orbs ── */}
-      <div className="orb-emerald absolute w-[600px] h-[600px] -top-32 -left-32 pointer-events-none" />
-      <div className="orb-cyan    absolute w-[500px] h-[500px] bottom-0   right-0    pointer-events-none" />
+      <div className="absolute w-[600px] h-[600px] -top-32 -left-32 pointer-events-none rounded-full blur-[120px] opacity-30" style={{ background: '#a3a093' }} />
+      <div className="absolute w-[500px] h-[500px] bottom-0 right-0 pointer-events-none rounded-full blur-[120px] opacity-20" style={{ background: '#e66240' }} />
       <div className="bg-grid absolute inset-0 pointer-events-none opacity-40" />
 
       {/* ═══════════ LEFT PANEL — Brand Visual ═══════════ */}
-      <div className="hidden lg:flex lg:w-[48%] relative flex-col justify-between p-12 overflow-hidden" style={{ background: 'linear-gradient(160deg, #0d1117, #0a0e1a, #0f1729)' }}>
+      <div className="hidden lg:flex lg:w-[48%] relative flex-col justify-start gap-16 p-12 overflow-hidden" style={{ background: 'linear-gradient(160deg, #f9f6ef, #ffffff, #f4f0e6)' }}>
         {/* Subtle accent glow */}
-        <div className="absolute top-0 left-0 w-80 h-80 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
+        <div className="absolute top-0 left-0 w-80 h-80 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(163,160,147,0.1) 0%, transparent 70%)' }} />
 
         {/* Top brand */}
         <div className="relative z-10 animate-fade-down">
-          <Link to="/" className="flex items-center gap-3 group w-fit">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <Navigation size={18} className="text-white rotate-45" />
-            </div>
-            <div>
-              <h1 className="font-display font-black text-lg text-white leading-none">ROADNEX</h1>
-              <p className="text-[10px] text-slate-400">Smart Infrastructure AI</p>
-            </div>
+          <Link to="/" className="flex flex-col gap-1 group w-fit">
+            <img src="/logo.png" alt="ROADNEX" className="h-14 object-contain" />
+            <p className="text-[10px] text-custom-sage font-medium">Smart Infrastructure AI</p>
           </Link>
         </div>
 
         {/* Center content */}
         <div className="relative z-10 space-y-8 animate-fade-up delay-200">
           <div>
-            <h2 className="font-display font-black text-4xl text-white leading-tight mb-3">
+            <h2 className="font-display font-black text-4xl text-custom-taupe leading-tight mb-3">
               Report. Track.<br />
-              <span className="gradient-text-emerald">Resolve.</span>
+              <span className="text-custom-terra">Resolve.</span>
             </h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
+            <p className="text-custom-sage text-sm leading-relaxed max-w-sm">
               Join thousands of citizens helping build safer roads. Your reports directly trigger municipal action within minutes.
             </p>
           </div>
 
           <div className="space-y-4">
-            <Bullet icon={Camera}  color="#10b981" text="AI-powered road defect detection from your phone camera" />
-            <Bullet icon={MapPin}  color="#06b6d4" text="GPS-pinned reports on interactive city maps" />
-            <Bullet icon={Shield}  color="#8b5cf6" text="Real-time repair status tracking and notifications" />
-            <Bullet icon={Zap}     color="#f59e0b" text="Average municipal response time under 42 minutes" />
+            <Bullet icon={Camera}  color="#e66240" text="AI-powered road defect detection from your phone camera" />
+            <Bullet icon={MapPin}  color="#a3a093" text="GPS-pinned reports on interactive city maps" />
+            <Bullet icon={Shield}  color="#e66240" text="Real-time repair status tracking and notifications" />
+            <Bullet icon={Zap}     color="#a3a093" text="Average municipal response time under 42 minutes" />
           </div>
 
-          {/* Demo stats */}
-          <div className="grid grid-cols-3 gap-4 pt-4">
-            {[
-              { value: '8.4k', label: 'Issues Fixed' },
-              { value: '96%', label: 'AI Accuracy' },
-              { value: '42m', label: 'Avg Response' },
-            ].map(s => (
-              <div key={s.label} className="text-center p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <p className="font-display font-black text-xl text-emerald-400">{s.value}</p>
-                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wide mt-0.5">{s.label}</p>
-              </div>
-            ))}
           </div>
-        </div>
 
-        {/* Bottom quote */}
-        <div className="relative z-10 animate-fade-up delay-400">
-          <p className="text-xs text-slate-500 italic">"ROADNEX has transformed how our city handles infrastructure complaints."</p>
-          <p className="text-[10px] text-slate-600 mt-1">— Municipal Commissioner, Smart City Division</p>
-        </div>
+
       </div>
 
       {/* ═══════════ RIGHT PANEL — Form ═══════════ */}
@@ -215,19 +197,19 @@ export default function LoginPage({ onLogin }) {
             <ChevronLeft size={15} /> Back to Home
           </Link>
 
-          <div className="glass-card rounded-2xl p-8 space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500/0 via-emerald-500 to-emerald-500/0" />
+          <div className="glass-card rounded-2xl p-8 space-y-6 relative overflow-hidden" style={{ background: 'rgba(255,255,255,0.8)', borderColor: '#a3a09333' }}>
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-custom-terra/0 via-custom-terra to-custom-terra/0" />
 
             {!googleOnboarding ? (
               <>
                 {/* Header */}
                 <div className="space-y-2">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.2))', border: '1px solid rgba(16,185,129,0.3)' }}>
-                    <Camera size={22} className="text-emerald-400" />
+                    style={{ background: 'rgba(230,98,64,0.1)', border: '1px solid rgba(230,98,64,0.2)' }}>
+                    <Camera size={22} className="text-custom-terra" />
                   </div>
-                  <h2 className="font-display font-black text-2xl text-white">Citizen Sign In</h2>
-                  <p className="text-xs text-slate-400">Submit road photos, log GPS pins, and track complaint statuses.</p>
+                  <h2 className="font-display font-black text-2xl text-custom-taupe">Citizen Sign In</h2>
+                  <p className="text-xs text-custom-sage">Submit road photos, log GPS pins, and track complaint statuses.</p>
                 </div>
 
                 {/* Error */}
@@ -267,8 +249,8 @@ export default function LoginPage({ onLogin }) {
                   <button type="submit" disabled={loading}
                     className="w-full py-3.5 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 transition-all duration-300 text-white mt-2 cursor-pointer disabled:opacity-50"
                     style={{
-                      background: loading ? 'rgba(16,185,129,0.5)' : 'linear-gradient(135deg, #10b981, #0891b2)',
-                      boxShadow: loading ? 'none' : '0 8px 24px rgba(16,185,129,0.3)'
+                      background: loading ? 'rgba(230,98,64,0.5)' : '#e66240',
+                      boxShadow: loading ? 'none' : '0 8px 24px rgba(230,98,64,0.3)'
                     }}
                   >
                     {loading ? (
@@ -290,20 +272,15 @@ export default function LoginPage({ onLogin }) {
                 </div>
 
                 {/* Google Buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { email: 'rahul.sharma@gmail.com', name: 'Rahul Sharma',  label: 'Google (Rahul)' },
-                    { email: 'guest.citizen@gmail.com', name: 'Guest Citizen', label: 'Google (Guest)' },
-                  ].map(g => (
-                    <button key={g.label} type="button" onClick={() => handleGoogleLogin(g.email, g.name)}
-                      className="py-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2 transition-all duration-200 text-slate-300 cursor-pointer"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
-                    >
-                      <span className="font-black text-emerald-400 text-sm">G</span> {g.label}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 gap-2">
+                  <button type="button" onClick={handleGoogleLogin}
+                    className="py-3 rounded-xl font-bold text-[11px] flex items-center justify-center gap-2 transition-all duration-200 text-slate-300 cursor-pointer"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                  >
+                    <span className="font-black text-emerald-400 text-sm">G</span> Continue with Google
+                  </button>
                 </div>
 
                 {/* Register Link */}

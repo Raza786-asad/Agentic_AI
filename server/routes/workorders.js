@@ -24,6 +24,11 @@ function rowToWorkOrder(r) {
     contractor:       r.contractor,
     targetCompletion: r.target_completion,
     estimatedCost:    r.estimated_cost,
+    repairedImageUrl: r.repaired_image_url,
+    repairedLat:      r.repaired_lat ? parseFloat(r.repaired_lat) : null,
+    repairedLng:      r.repaired_lng ? parseFloat(r.repaired_lng) : null,
+    repairedAt:       r.repaired_at,
+    municipalId:      r.municipal_id,
     createdAt:        r.created_at,
     updatedAt:        r.updated_at,
   };
@@ -116,6 +121,108 @@ router.patch('/:id', verifyToken, async (req, res) => {
     res.json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
   } catch (err) {
     console.error('[WorkOrders PATCH]', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── PATCH /api/work-orders/:id/submit-repair — Municipal submits repair ──────
+
+router.patch('/:id/submit-repair', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'municipal' && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Municipal operator credentials required.' });
+    }
+
+    const { repairedImageUrl, repairedLat, repairedLng } = req.body;
+
+    if (!repairedImageUrl) {
+      return res.status(400).json({ success: false, error: 'repairedImageUrl is required.' });
+    }
+
+    const { rows } = await pool.query(
+      `UPDATE work_orders
+       SET
+         status             = 'Pending Verification',
+         repaired_image_url = $1,
+         repaired_lat       = $2,
+         repaired_lng       = $3,
+         repaired_at        = NOW(),
+         municipal_id       = $4,
+         updated_at         = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [repairedImageUrl, repairedLat || 0, repairedLng || 0, req.user.id, req.params.id]
+    );
+
+    if (rows.length === 0) return res.status(404).json({ success: false, error: 'Work order not found.' });
+    res.json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
+  } catch (err) {
+    console.error('[WorkOrders submit-repair PATCH]', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─── PATCH /api/work-orders/:id/verify-repair — Admin approves/rejects repair ──
+
+router.patch('/:id/verify-repair', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Admin credentials required.' });
+    }
+
+    const { action } = req.body; // 'Approve' or 'Reject'
+    if (action !== 'Approve' && action !== 'Reject') {
+      return res.status(400).json({ success: false, error: 'Action must be Approve or Reject.' });
+    }
+
+    if (action === 'Approve') {
+      // 1. Update work order to Completed
+      const { rows } = await pool.query(
+        `UPDATE work_orders
+         SET
+           status     = 'Completed',
+           updated_at = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [req.params.id]
+      );
+
+      if (rows.length === 0) return res.status(404).json({ success: false, error: 'Work order not found.' });
+
+      // 2. Resolve the linked report
+      if (rows[0].report_id) {
+        await pool.query(
+          `UPDATE reports
+           SET
+             status     = 'Resolved',
+             updated_at = NOW()
+           WHERE id = $1`,
+          [rows[0].report_id]
+        );
+      }
+
+      res.json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
+    } else {
+      // Reject: reset status back to Pending, wipe repair uploads
+      const { rows } = await pool.query(
+        `UPDATE work_orders
+         SET
+           status             = 'Pending',
+           repaired_image_url = NULL,
+           repaired_lat       = NULL,
+           repaired_lng       = NULL,
+           repaired_at        = NULL,
+           updated_at         = NOW()
+         WHERE id = $1
+         RETURNING *`,
+        [req.params.id]
+      );
+
+      if (rows.length === 0) return res.status(404).json({ success: false, error: 'Work order not found.' });
+      res.json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
+    }
+  } catch (err) {
+    console.error('[WorkOrders verify-repair PATCH]', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

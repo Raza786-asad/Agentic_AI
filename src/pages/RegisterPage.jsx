@@ -130,14 +130,9 @@ export default function RegisterPage({ onLogin }) {
 
         {/* Brand */}
         <div className="relative z-10 animate-fade-down">
-          <Link to="/" className="flex items-center gap-3 w-fit">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-              <Navigation size={18} className="text-white rotate-45" />
-            </div>
-            <div>
-              <h1 className="font-display font-black text-lg text-white leading-none">ROADNEX</h1>
-              <p className="text-[10px] text-slate-400">Smart Infrastructure AI</p>
-            </div>
+          <Link to="/" className="flex flex-col gap-1 w-fit">
+            <img src="/logo.png" alt="ROADNEX" className="h-14 object-contain" />
+            <p className="text-[10px] text-slate-400">Smart Infrastructure AI</p>
           </Link>
         </div>
 

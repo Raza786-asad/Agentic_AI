@@ -26,6 +26,7 @@ function sanitize(row) {
     name:       safe.name,
     phone:      safe.phone,
     email:      safe.email,
+    address:    safe.address,
     role:       safe.role,
     isGoogle:   safe.is_google,
     googleId:   safe.google_id ?? undefined,
@@ -40,7 +41,7 @@ function sanitize(row) {
  * Create a new user with email/password authentication.
  * Throws if email or phone is already registered.
  */
-export async function createUser({ name, phone, email, password }) {
+export async function createUser({ name, phone, email, password, role = 'user' }) {
   const emailLower = email.toLowerCase();
 
   // Unique email check
@@ -65,9 +66,9 @@ export async function createUser({ name, phone, email, password }) {
 
   const { rows } = await pool.query(
     `INSERT INTO users (id, name, phone, email, salt, password_hash, role, is_google)
-     VALUES ($1,$2,$3,$4,$5,$6,'user',FALSE)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,FALSE)
      RETURNING *`,
-    [id, name, phone || '', emailLower, salt, hash]
+    [id, name, phone || '', emailLower, salt, hash, role]
   );
 
   return sanitize(rows[0]);
@@ -97,6 +98,17 @@ export async function findUserById(id) {
   const { rows } = await pool.query(
     'SELECT * FROM users WHERE id = $1',
     [id]
+  );
+  return rows.length ? sanitize(rows[0]) : null;
+}
+
+/**
+ * Find user by email (used for municipal Google auth verification).
+ */
+export async function findUserByEmail(email) {
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE LOWER(email) = $1',
+    [email.toLowerCase()]
   );
   return rows.length ? sanitize(rows[0]) : null;
 }
@@ -160,4 +172,38 @@ export async function getUsers() {
     'SELECT * FROM users ORDER BY created_at DESC'
   );
   return rows.map(sanitize);
+}
+
+/**
+ * Update user profile details.
+ */
+export async function updateUserProfile(id, { name, phone, address }) {
+  if (phone) {
+    const check = await pool.query(
+      'SELECT id FROM users WHERE phone = $1 AND id <> $2',
+      [phone, id]
+    );
+    if (check.rowCount > 0) throw new Error('Phone number already registered to another account.');
+  }
+
+  const { rows } = await pool.query(
+    `UPDATE users SET name = $1, phone = $2, address = $3 WHERE id = $4 RETURNING *`,
+    [name, phone || '', address || null, id]
+  );
+  if (rows.length === 0) throw new Error('User not found.');
+
+  return sanitize(rows[0]);
+}
+
+/**
+ * Update user avatar URL.
+ */
+export async function updateUserAvatar(id, avatarUrl) {
+  const { rows } = await pool.query(
+    `UPDATE users SET avatar_url = $1 WHERE id = $2 RETURNING *`,
+    [avatarUrl, id]
+  );
+  if (rows.length === 0) throw new Error('User not found.');
+
+  return sanitize(rows[0]);
 }

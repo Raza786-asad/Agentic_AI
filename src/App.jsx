@@ -11,6 +11,9 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import UserDashboardPage from './pages/UserDashboardPage';
+import MunicipalLoginPage from './pages/MunicipalLoginPage';
+import MunicipalRegisterPage from './pages/MunicipalRegisterPage';
+import MunicipalDashboardPage from './pages/MunicipalDashboardPage';
 
 import DashboardPage from './pages/DashboardPage';
 import RoadAnalysisPage from './pages/RoadAnalysisPage';
@@ -84,6 +87,16 @@ function AppContent() {
     }
   ]);
 
+  // Load theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('roadnex_theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
   // Session verification on mount
   useEffect(() => {
     const token = localStorage.getItem('roadnex_token');
@@ -149,6 +162,8 @@ function AppContent() {
           imageUrl:     r.imageUrl,
           citizenName:  r.citizenName,
           isMyUpload:   r.userId === currentUser.id,
+          state:        r.state,
+          district:     r.district,
         }));
         setDefects(prev => {
           const ids = new Set(apiDefects.map(d => d.id));
@@ -167,6 +182,7 @@ function AppContent() {
           status:         c.status,
           aiSimilarity:   c.aiSimilarity,
           matchedDefectId: c.matchedDefectId,
+          isMerged:       c.isMerged,
           isMyUpload:     c.userId === currentUser.id,
         }));
         setComplaints(prev => {
@@ -213,7 +229,12 @@ function AppContent() {
     localStorage.setItem('roadnex_token', token);
     localStorage.setItem('roadnex_user', JSON.stringify(user));
     setCurrentUser(user);
-    triggerToast(`Welcome ${user.name}! Logged in as ${user.role === 'admin' ? 'Municipal Admin' : 'Citizen User'}.`);
+    const roleLabel = user.role === 'admin' 
+      ? 'Municipal Admin' 
+      : user.role === 'municipal' 
+        ? 'Municipal Operator' 
+        : 'Citizen User';
+    triggerToast(`Welcome ${user.name}! Logged in as ${roleLabel}.`);
   };
 
   const handleLogout = () => {
@@ -231,6 +252,46 @@ function AppContent() {
     setWorkOrders((prev) =>
       prev.map((w) => (w.defectId === defectId ? { ...w, status: newStatus } : w))
     );
+    setComplaints((prev) =>
+      prev.map((c) => (c.reportId === defectId ? { ...c, status: newStatus } : c))
+    );
+  };
+
+  const handleVerifyRepair = async (woId, action) => {
+    try {
+      const token = localStorage.getItem('roadnex_token');
+      const res = await fetch(`/api/work-orders/${woId}/verify-repair`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Update workOrders state
+        setWorkOrders((prev) => 
+          prev.map((w) => w.id === woId ? { ...w, status: action === 'Approve' ? 'Completed' : 'Pending' } : w)
+        );
+        // If approved, update defects state too
+        if (action === 'Approve') {
+          const matchedWO = workOrders.find((w) => w.id === woId);
+          if (matchedWO && matchedWO.defectId) {
+            setDefects((prev) => 
+              prev.map((d) => d.id === matchedWO.defectId ? { ...d, status: 'Resolved' } : d)
+            );
+            setComplaints((prev) => 
+              prev.map((c) => c.reportId === matchedWO.defectId ? { ...c, status: 'Resolved' } : c)
+            );
+          }
+        }
+        return true;
+      }
+    } catch (err) {
+      console.error('[Verify Repair Error]', err);
+    }
+    return false;
   };
 
   const handleMergeComplaint = async (complaintId, matchedDefectId) => {
@@ -253,6 +314,53 @@ function AppContent() {
     }
   };
 
+  const handleDeleteComplaint = async (complaintId) => {
+    // Optimistic update
+    setComplaints((prev) => prev.filter((c) => c.id !== complaintId));
+
+    try {
+      const token = localStorage.getItem('roadnex_token');
+      const res = await fetch(`/api/complaints/${complaintId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to delete complaint from server.');
+      }
+      triggerToast('Complaint deleted successfully.');
+    } catch (err) {
+      console.warn('[App] Failed to delete complaint from DB:', err);
+      triggerToast(err.message || 'Failed to delete complaint.', 'warning');
+    }
+  };
+
+  const handleUpdateComplaint = (updatedCmp) => {
+    setComplaints((prev) => prev.map((c) => c.id === updatedCmp.id ? updatedCmp : c));
+  };
+
+  const handleCreateWorkOrder = async (woDetails) => {
+    try {
+      const token = localStorage.getItem('roadnex_token');
+      const res = await fetch('/api/work-orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(woDetails)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWorkOrders((prev) => [data.workOrder, ...prev]);
+        return data.workOrder;
+      }
+    } catch (err) {
+      console.error('[App] Failed to create work order:', err);
+    }
+    return null;
+  };
+
   const handleAddWorkOrder = async (newOrder) => {
     // Optimistic local update
     setWorkOrders((prev) => [newOrder, ...prev]);
@@ -267,6 +375,7 @@ function AppContent() {
       aiSimilarity: 0,
       matchedDefectId: newOrder.id,
       status: 'Reported',
+      isMerged: false,
       isMyUpload: true
     };
     setComplaints((prev) => [newComplaint, ...prev]);
@@ -288,6 +397,8 @@ function AppContent() {
       status: newOrder.status,
       imageUrl: newOrder.imageUrl,
       isMyUpload: true,
+      state: newOrder.state,
+      district: newOrder.district,
     };
     setDefects((prev) => [newDefect, ...prev]);
 
@@ -313,6 +424,8 @@ function AppContent() {
           imageUrl:      newOrder.imageUrl || null,
           aiAssessment:  newOrder.assessment || null,
           isPothole:     true,
+          state:         newOrder.state || null,
+          district:      newOrder.district || null,
         })
       }).then(r => r.json());
 
@@ -355,7 +468,15 @@ function AppContent() {
   }
 
   // Determine if active route is public
-  const isPublicRoute = ['/', '/login', '/register', '/forgot-password', '/admin/login'].includes(location.pathname);
+  const isPublicRoute = ['/', '/login', '/register', '/forgot-password', '/admin/login', '/municipal/login', '/municipal/register'].includes(location.pathname);
+
+  // Helper redirect target based on user role
+  const getDashboardRedirect = (user) => {
+    if (!user) return '/';
+    if (user.role === 'admin') return '/admin/dashboard';
+    if (user.role === 'municipal') return '/municipal/dashboard';
+    return '/user/dashboard';
+  };
 
   // 2. Render public layout (no sidebar/header)
   if (isPublicRoute) {
@@ -364,14 +485,20 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={
-            currentUser ? <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/user/dashboard'} replace /> : <LoginPage onLogin={handleLogin} />
+            currentUser ? <Navigate to={getDashboardRedirect(currentUser)} replace /> : <LoginPage onLogin={handleLogin} />
           } />
           <Route path="/register" element={
-            currentUser ? <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/user/dashboard'} replace /> : <RegisterPage onLogin={handleLogin} />
+            currentUser ? <Navigate to={getDashboardRedirect(currentUser)} replace /> : <RegisterPage onLogin={handleLogin} />
           } />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/admin/login" element={
-            currentUser ? <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/user/dashboard'} replace /> : <AdminLoginPage onLogin={handleLogin} />
+            currentUser ? <Navigate to={getDashboardRedirect(currentUser)} replace /> : <AdminLoginPage onLogin={handleLogin} />
+          } />
+          <Route path="/municipal/login" element={
+            currentUser ? <Navigate to={getDashboardRedirect(currentUser)} replace /> : <MunicipalLoginPage onLogin={handleLogin} />
+          } />
+          <Route path="/municipal/register" element={
+            currentUser ? <Navigate to={getDashboardRedirect(currentUser)} replace /> : <MunicipalRegisterPage onLogin={handleLogin} />
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -385,9 +512,14 @@ function AppContent() {
     );
   }
 
+  const handleUpdateProfile = (updatedUser) => {
+    setCurrentUser(updatedUser);
+    localStorage.setItem('roadnex_user', JSON.stringify(updatedUser));
+  };
+
   // 3. Render private authenticated layout (with Sidebar and Header)
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
+    <div className="flex min-h-screen bg-custom-cream text-custom-taupe font-sans">
       {/* Sidebar Navigation */}
       <Sidebar currentUser={currentUser} onLogout={handleLogout} />
 
@@ -399,6 +531,7 @@ function AppContent() {
           unreadCount={notifications.length}
           notifications={notifications}
           onMarkAllRead={handleMarkAllRead}
+          onUpdateProfile={handleUpdateProfile}
         />
 
         <main className="flex-1 overflow-y-auto">
@@ -416,41 +549,37 @@ function AppContent() {
             } />
             <Route path="/user/my-reports" element={
               <ProtectedRoute allowedRole="user" currentUser={currentUser} loading={loading}>
-                <ComplaintsPage complaints={complaints} onMergeComplaint={handleMergeComplaint} onTriggerToast={triggerToast} currentUser={currentUser} />
+                <ComplaintsPage complaints={complaints} onMergeComplaint={handleMergeComplaint} onDeleteComplaint={handleDeleteComplaint} onUpdateComplaint={handleUpdateComplaint} onCreateWorkOrder={handleCreateWorkOrder} onTriggerToast={triggerToast} currentUser={currentUser} />
               </ProtectedRoute>
             } />
             <Route path="/user/map" element={
               <ProtectedRoute allowedRole="user" currentUser={currentUser} loading={loading}>
-                <GisMapPage defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
+                <GisMapPage defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} currentUser={currentUser} />
               </ProtectedRoute>
             } />
             <Route path="/user/settings" element={
               <ProtectedRoute allowedRole="user" currentUser={currentUser} loading={loading}>
-                <SettingsPage onTriggerToast={triggerToast} />
+                <SettingsPage onTriggerToast={triggerToast} currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />
               </ProtectedRoute>
             } />
 
             {/* Protected Admin Routes */}
             <Route path="/admin/dashboard" element={
               <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
-                <DashboardPage defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
+                <DashboardPage defects={defects} workOrders={workOrders} onVerifyRepair={handleVerifyRepair} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
               </ProtectedRoute>
             } />
             <Route path="/admin/reports" element={
               <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
-                <ComplaintsPage complaints={complaints} onMergeComplaint={handleMergeComplaint} onTriggerToast={triggerToast} currentUser={currentUser} />
+                <ComplaintsPage complaints={complaints} onMergeComplaint={handleMergeComplaint} onDeleteComplaint={handleDeleteComplaint} onUpdateComplaint={handleUpdateComplaint} onCreateWorkOrder={handleCreateWorkOrder} onTriggerToast={triggerToast} currentUser={currentUser} />
               </ProtectedRoute>
             } />
             <Route path="/admin/map" element={
               <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
-                <GisMapPage defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
+                <GisMapPage defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} currentUser={currentUser} />
               </ProtectedRoute>
             } />
-            <Route path="/admin/work-orders" element={
-              <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
-                <MaintenancePage workOrders={workOrders} defects={defects} onUpdateStatus={handleUpdateStatus} onTriggerToast={triggerToast} />
-              </ProtectedRoute>
-            } />
+
             <Route path="/admin/analytics" element={
               <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
                 <AnalyticsPage />
@@ -458,14 +587,32 @@ function AppContent() {
             } />
             <Route path="/admin/settings" element={
               <ProtectedRoute allowedRole="admin" currentUser={currentUser} loading={loading}>
-                <SettingsPage onTriggerToast={triggerToast} />
+                <SettingsPage onTriggerToast={triggerToast} currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />
+              </ProtectedRoute>
+            } />
+
+            {/* Protected Municipal Routes */}
+            <Route path="/municipal/dashboard" element={
+              <ProtectedRoute allowedRole="municipal" currentUser={currentUser} loading={loading}>
+                <MunicipalDashboardPage onTriggerToast={triggerToast} />
+              </ProtectedRoute>
+            } />
+            <Route path="/municipal/settings" element={
+              <ProtectedRoute allowedRole="municipal" currentUser={currentUser} loading={loading}>
+                <SettingsPage onTriggerToast={triggerToast} currentUser={currentUser} onUpdateProfile={handleUpdateProfile} />
               </ProtectedRoute>
             } />
 
             {/* Catch-all Auth Redirect */}
             <Route path="*" element={
               currentUser ? (
-                <Navigate to={currentUser.role === 'admin' ? '/admin/dashboard' : '/user/dashboard'} replace />
+                <Navigate to={
+                  currentUser.role === 'admin' 
+                    ? '/admin/dashboard' 
+                    : currentUser.role === 'municipal' 
+                      ? '/municipal/dashboard' 
+                      : '/user/dashboard'
+                } replace />
               ) : (
                 <Navigate to="/" replace />
               )

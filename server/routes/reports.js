@@ -43,6 +43,20 @@ function rowToReport(r) {
   };
 }
 
+// ─── GET /api/reports/public-live — Live telemetry for landing page ─────────
+
+router.get('/public-live', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, lat, lng, severity, priority_score, defect_type, created_at, status FROM reports WHERE status != \'Resolved\' ORDER BY created_at DESC LIMIT 100'
+    );
+    res.json({ success: true, reports: rows });
+  } catch (err) {
+    console.error('[Reports GET /public-live]', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ─── POST /api/reports — Citizen submits a report ────────────────────────────
 
 router.post('/', verifyToken, async (req, res) => {
@@ -63,6 +77,8 @@ router.post('/', verifyToken, async (req, res) => {
       imageFilename = null,
       aiAssessment = null,
       isPothole    = true,
+      state        = null,
+      district     = null,
     } = req.body;
 
     if (!location) {
@@ -75,13 +91,13 @@ router.post('/', verifyToken, async (req, res) => {
       `INSERT INTO reports
         (id, user_id, citizen_name, defect_type, severity, confidence,
          priority_score, area, depth, waterlogging, location, lat, lng,
-         image_url, image_filename, ai_assessment, is_pothole, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'Reported')
+         image_url, image_filename, ai_assessment, is_pothole, state, district, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,'Reported')
        RETURNING *`,
       [
         id, user.id, user.name, defectType, severity, confidence,
         priorityScore, area, depth, waterlogging, location, lat, lng,
-        imageUrl, imageFilename, aiAssessment, isPothole
+        imageUrl, imageFilename, aiAssessment, isPothole, state, district
       ]
     );
 
