@@ -16,24 +16,23 @@ function InputField({ label, type: initialType, value, onChange, placeholder, ic
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-bold text-slate-300">{label}</label>
+        <label className="text-xs font-bold text-custom-sage uppercase tracking-wider">{label}</label>
         {hint}
       </div>
       <div className="relative group">
-        <Icon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200"
-          style={{ color: accentColor + '90' }} />
+        <Icon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-custom-taupe/60 transition-colors duration-200" />
         <input
           type={type}
           required={required}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="input-premium input-premium-emerald pr-10"
+          className="w-full bg-white/50 border border-custom-sage/30 rounded-xl pr-10 py-3 text-sm text-custom-taupe focus:outline-none focus:border-custom-taupe font-medium transition-all"
           style={{ paddingLeft: '40px' }}
         />
         {isPassword && (
           <button type="button" onClick={() => setShowPass(!showPass)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
             tabIndex={-1}
           >
             {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -46,14 +45,14 @@ function InputField({ label, type: initialType, value, onChange, placeholder, ic
 }
 
 /* ─── Feature Bullet ─── */
-function Bullet({ icon: Icon, text, color = '#06b6d4' }) {
+function Bullet({ icon: Icon, text, color = '#e66240' }) {
   return (
     <div className="flex items-start gap-3">
       <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
         style={{ background: color + '15', border: `1px solid ${color}30` }}>
         <Icon size={14} style={{ color }} />
       </div>
-      <p className="text-xs text-slate-300 leading-relaxed">{text}</p>
+      <p className="text-xs text-custom-taupe leading-relaxed font-medium">{text}</p>
     </div>
   );
 }

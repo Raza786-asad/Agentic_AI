@@ -53,20 +53,20 @@ function PasswordInput({ label, value, onChange, placeholder, accentColor = '#10
 
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-bold text-slate-300 block">{label}</label>
+      <label className="text-xs font-bold text-custom-sage block uppercase tracking-wider">{label}</label>
       <div className="relative">
-        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: accentColor + '90' }} />
+        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-custom-taupe/60" />
         <input
           type={show ? 'text' : 'password'}
           required
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="input-premium pr-10"
+          className="w-full bg-white/50 border border-custom-sage/30 rounded-xl pr-10 py-3 text-sm text-custom-taupe focus:outline-none focus:border-custom-taupe font-medium transition-all"
           style={{ paddingLeft: '40px', borderColor: mismatch ? 'rgba(244,63,94,0.5)' : undefined }}
         />
         <button type="button" tabIndex={-1} onClick={() => setShow(!show)}
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer">
           {show ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>
       </div>
@@ -117,22 +117,22 @@ export default function RegisterPage({ onLogin }) {
   const isFormValid = name && phone && email && password && password === confirmPassword && password.length >= 6;
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden" style={{ backgroundColor: '#0a0e1a', color: '#e2e8f0' }}>
+    <div className="min-h-screen flex relative overflow-hidden bg-custom-cream">
 
       {/* ── BG ── */}
-      <div className="orb-emerald absolute w-[600px] h-[600px] -top-32 -left-32 pointer-events-none" />
-      <div className="orb-violet  absolute w-[400px] h-[400px] bottom-0 right-0  pointer-events-none" />
-      <div className="bg-grid absolute inset-0 pointer-events-none opacity-40" />
+      <div className="orb-emerald absolute w-[600px] h-[600px] -top-32 -left-32 pointer-events-none opacity-50" />
+      <div className="orb-violet  absolute w-[400px] h-[400px] bottom-0 right-0  pointer-events-none opacity-50" />
+      <div className="bg-grid absolute inset-0 pointer-events-none opacity-20" />
 
       {/* ═══════════ LEFT PANEL ═══════════ */}
-      <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden" style={{ background: 'linear-gradient(160deg, #0d1117, #0a0e1a, #0f1729)' }}>
+      <div className="hidden lg:flex lg:w-[46%] relative flex-col justify-between p-12 overflow-hidden border-r border-custom-sage/20 bg-white/40 backdrop-blur-md">
         <div className="absolute top-0 left-0 w-80 h-80 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
 
         {/* Brand */}
         <div className="relative z-10 animate-fade-down">
           <Link to="/" className="flex flex-col gap-1 w-fit">
             <img src="/logo.png" alt="ROADNEX" className="h-14 object-contain" />
-            <p className="text-[10px] text-slate-400">Smart Infrastructure AI</p>
+            <p className="text-[10px] text-custom-sage font-semibold uppercase tracking-wider">Smart Infrastructure AI</p>
           </Link>
         </div>
 
@@ -185,57 +185,51 @@ export default function RegisterPage({ onLogin }) {
             <ChevronLeft size={15} /> Back to Login
           </Link>
 
-          <div className="glass-card rounded-2xl p-8 space-y-5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500/0 via-emerald-500 to-emerald-500/0" />
+      <div className="w-full lg:w-[54%] flex items-center justify-center p-6 sm:p-12 z-10 relative">
+        <div className="w-full max-w-md animate-fade-left">
+          
+          <div className="mb-8">
+            <h2 className="text-3xl font-display font-bold text-custom-taupe mb-2">Create Account</h2>
+            <p className="text-sm text-custom-sage font-medium">Join the civic action network to report and track infrastructure issues.</p>
+          </div>
 
-            {/* Header */}
-            <div>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.2))', border: '1px solid rgba(16,185,129,0.3)' }}>
-                <User size={22} className="text-emerald-400" />
-              </div>
-              <h2 className="font-display font-black text-2xl text-white">Create Citizen Account</h2>
-              <p className="text-xs text-slate-400 mt-1">Join ROADNEX to report potholes and monitor smart infrastructure.</p>
-            </div>
-
-            {/* Error */}
+          <div className="glass-panel p-8 rounded-3xl relative border-t border-l border-white/50 shadow-[0_8px_32px_rgba(55,65,81,0.05)]">
+            
             {error && (
-              <div className="p-3.5 rounded-xl flex items-center gap-2 text-xs font-bold animate-fade-down"
-                style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.25)', color: '#fb7185' }}>
-                <AlertCircle size={14} className="shrink-0" /> {error}
+              <div className="mb-6 p-4 rounded-xl flex items-center gap-3 text-sm font-bold animate-fade-down border border-rose-500/20 bg-rose-50 text-rose-600">
+                <AlertCircle size={16} className="shrink-0" /> {error}
               </div>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
 
               {/* Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 block">Full Name</label>
+                <label className="text-xs font-bold text-custom-sage block uppercase tracking-wider">Full Name</label>
                 <div className="relative">
-                  <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400/60" />
+                  <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-custom-taupe/60" />
                   <input type="text" required placeholder="Rahul Sharma" value={name} onChange={e => setName(e.target.value)}
-                    className="input-premium input-premium-emerald" style={{ paddingLeft: '40px' }} />
+                    className="w-full bg-white/50 border border-custom-sage/30 rounded-xl pr-4 py-3 text-sm text-custom-taupe focus:outline-none focus:border-custom-taupe font-medium transition-all" style={{ paddingLeft: '40px' }} />
                 </div>
               </div>
 
               {/* Phone */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 block">Phone Number</label>
+                <label className="text-xs font-bold text-custom-sage block uppercase tracking-wider">Phone Number</label>
                 <div className="relative">
-                  <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400/60" />
+                  <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-custom-taupe/60" />
                   <input type="tel" required placeholder="9876543210" value={phone} onChange={e => setPhone(e.target.value)}
-                    className="input-premium input-premium-emerald" style={{ paddingLeft: '40px' }} />
+                    className="w-full bg-white/50 border border-custom-sage/30 rounded-xl pr-4 py-3 text-sm text-custom-taupe focus:outline-none focus:border-custom-taupe font-medium transition-all" style={{ paddingLeft: '40px' }} />
                 </div>
               </div>
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 block">Email Address</label>
+                <label className="text-xs font-bold text-custom-sage block uppercase tracking-wider">Email Address</label>
                 <div className="relative">
-                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400/60" />
+                  <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-custom-taupe/60" />
                   <input type="email" required placeholder="rahul@example.com" value={email} onChange={e => setEmail(e.target.value)}
-                    className="input-premium input-premium-emerald" style={{ paddingLeft: '40px' }} />
+                    className="w-full bg-white/50 border border-custom-sage/30 rounded-xl pr-4 py-3 text-sm text-custom-taupe focus:outline-none focus:border-custom-taupe font-medium transition-all" style={{ paddingLeft: '40px' }} />
                 </div>
               </div>
 

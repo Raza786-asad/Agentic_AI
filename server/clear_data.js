@@ -12,6 +12,7 @@ async function clearAllData() {
     await pool.query('TRUNCATE TABLE work_orders CASCADE;');
     await pool.query('TRUNCATE TABLE complaints CASCADE;');
     await pool.query('TRUNCATE TABLE reports CASCADE;');
+    await pool.query('TRUNCATE TABLE users CASCADE;');
     console.log('✅ Database tables cleared successfully.');
 
     const uploadsDir = path.join(__dirname, 'uploads');
