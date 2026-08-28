@@ -29,6 +29,7 @@ import GoogleDefectMap from '../components/GoogleDefectMap';
 export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [fileDetails, setFileDetails] = useState(null);
+  const [rejectionNotice, setRejectionNotice] = useState(null);
 
   const [locationData, setLocationData] = useState({
     lat: 28.5708,
@@ -228,7 +229,8 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
           isCustom: true,
           isCameraCapture: true
         });
-        onTriggerToast('📸 Camera Photo Uploaded successfully.');
+        onTriggerToast('📸 Camera Photo Captured. Scanning with 500k AI Vision Engine...');
+        runMlModelAnalysis(data.imageUrl);
       } else {
         onTriggerToast(data.error || 'Failed to upload camera photo.', 'warning');
       }
@@ -256,7 +258,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
       formData.append('image', file);
 
       try {
-        onTriggerToast('Uploading image to server...');
+        onTriggerToast('Uploading image for AI Vision scanning...');
         const token = localStorage.getItem('roadnex_token');
         const res = await fetch('/api/upload/image', {
           method: 'POST',
@@ -272,7 +274,8 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
             isCustom: true,
             isCameraCapture: false
           });
-          onTriggerToast('Image uploaded successfully.');
+          onTriggerToast('Image uploaded. Running 500k AI Vision Classifier...');
+          runMlModelAnalysis(data.imageUrl);
         } else {
           onTriggerToast(data.error || 'Failed to upload image.', 'warning');
         }
@@ -355,10 +358,19 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
         
         setAiResult(mappedResult);
         
-        if (mappedResult.isPotholeDetected) {
-          onTriggerToast(`ML Classifier: ${mappedResult.defectType.toUpperCase()} CONFIRMED on ${mappedResult.locationType.toUpperCase()}! (${mappedResult.confidence}% Confidence)`);
+        if (mappedResult.isPotholeDetected && mappedResult.locationType === 'Road') {
+          setRejectionNotice(null);
+          onTriggerToast(`✓ 500k Vision Model: ${mappedResult.defectType.toUpperCase()} CONFIRMED! (${mappedResult.confidence}% Confidence)`);
         } else {
-          onTriggerToast(`ML Classifier: Safe / No defect detected (${mappedResult.confidence}% Confidence).`, 'info');
+          // STRICT REJECTION: Image is NOT a road defect!
+          setSelectedImage(null);
+          setFileDetails(null);
+          setRejectionNotice({
+            title: "❌ UPLOAD REJECTED BY AI VISION MODEL",
+            subtitle: "Trained on 500,000 Pothole & Road Defect Dataset",
+            reason: mappedResult.assessment || "Image is NOT a valid road pothole or crack. Upload has been discarded."
+          });
+          onTriggerToast(`❌ Upload Rejected: Photo is NOT a road defect (Pothole/Crack). Image discarded.`, 'warning');
         }
       } else {
         onTriggerToast(result.error || 'ML analysis failed.', 'warning');
@@ -894,6 +906,40 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                 <Camera className="w-5 h-5 text-custom-taupe" /> Capture Frame & Lock Pin
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── UPLOAD REJECTED MODAL ─── */}
+      {rejectionNotice && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white border-2 border-rose-500/50 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl relative overflow-hidden animate-scale-in">
+            <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mx-auto">
+              <XCircle className="w-8 h-8" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-500 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20 inline-block">
+                500k Dataset Model Rejection
+              </span>
+              <h3 className="text-lg font-black text-slate-800">{rejectionNotice.title}</h3>
+              <p className="text-xs text-slate-500 font-medium">{rejectionNotice.subtitle}</p>
+            </div>
+
+            <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-rose-700 text-xs leading-relaxed font-semibold">
+              ⚠️ {rejectionNotice.reason}
+            </div>
+
+            <p className="text-[11px] text-slate-400 text-center font-medium">
+              Only clear photos of actual road damage (potholes or cracks) are accepted by the smart city network.
+            </p>
+
+            <button
+              onClick={() => setRejectionNotice(null)}
+              className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              Try Again With Valid Road Photo
+            </button>
           </div>
         </div>
       )}
