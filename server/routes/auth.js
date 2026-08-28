@@ -67,7 +67,7 @@ export function verifyToken(req, res, next) {
 // Store admin details in memory since admin is not DB-backed
 let adminAvatarUrl = null;
 let adminName = 'Md. Asad Raza';
-let adminPhone = '+919102510563';
+let adminPhone = '+91 9102510563';
 let adminAddress = 'Vadlamudi,Guntur-522213';
 
 /**
