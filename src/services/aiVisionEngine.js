@@ -30,6 +30,8 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
         let roadAsphaltPixels = 0;
         let shadowCavityPixels = 0;
         let vibrantNonRoadPixels = 0;
+        let skinPixels = 0;
+        let indoorFurniturePixels = 0;
         let edgeGradients = 0;
         let totalBrightness = 0;
 
@@ -50,14 +52,40 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
             const minChannel = Math.min(r, g, b);
             const colorSaturation = maxChannel - minChannel;
 
-            // 1. Asphalt Surface Check: Low-to-moderate saturation (< 25) and gray/earthy brightness (30 - 185)
-            const isAsphaltColor = colorSaturation < 25 && brightness >= 30 && brightness <= 185;
+            // 1. Human Skin Tone Detection (Selfies, portraits, human faces)
+            const isSkin = (
+              (r > 40 && g > 25 && b > 15 && r > g && g >= b && (r - b) > 12) ||
+              (r > 95 && g > 40 && b > 20 && Math.abs(r - g) > 10) ||
+              (r > 130 && g > 85 && b > 60 && r > g && g > b)
+            );
+            if (isSkin) {
+              skinPixels++;
+            }
+
+            // 2. Indoor Wood / Furniture / Clothes / Walls (Browns, tans, fabrics, walls)
+            const isFurnitureOrClothing = (
+              (r > g + 10 && g > b + 5 && r > 50) || // Warm brown/wood/leather
+              (brightness > 180 && colorSaturation < 15) || // White/cream indoor wall or shirt
+              (b > r + 15 && b > g + 10) || // Blue shirt/jeans/sky
+              (g > r + 15 && g > b + 15) // Green foliage/plants
+            );
+            if (isFurnitureOrClothing) {
+              indoorFurniturePixels++;
+            }
+
+            // 3. Genuine Road Asphalt Check (Must be neutral dark/mid gray gravel, low saturation < 15)
+            const isAsphaltColor = (
+              colorSaturation < 15 &&
+              brightness >= 25 && brightness <= 150 &&
+              Math.abs(r - g) < 12 && Math.abs(g - b) < 12 &&
+              !isSkin && !isFurnitureOrClothing
+            );
             if (isAsphaltColor) {
               roadAsphaltPixels++;
             }
 
-            // 2. Cavity Shadow Basin Check: Dark shadow/cavity area (brightness 8 - 65) and low-to-moderate saturation
-            const isDarkCavity = brightness >= 8 && brightness < 65 && colorSaturation < 25;
+            // 4. Dark Cavity Shadow Basin (Dark depression ON asphalt road surface)
+            const isDarkCavity = isAsphaltColor && brightness >= 5 && brightness < 55;
             if (isDarkCavity) {
               shadowCavityPixels++;
               foundPoints = true;
@@ -67,21 +95,16 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
               if (y > maxY) maxY = y;
             }
 
-            // 3. Vibrant Non-Road Color Check (Skin, clothes, foliage, sky, bright indoor objects)
-            const isVibrantColor = colorSaturation > 35;
-            const isSkyBlue = b > 120 && b > r + 20;
-            const isFoliageGreen = g > 100 && g > r + 15;
-            const isWarmOrSkin = r > 130 && (g > 85 || b < 85) && colorSaturation > 25;
-
-            if (isVibrantColor || isSkyBlue || isFoliageGreen || isWarmOrSkin) {
+            // 5. Non-Road accumulator
+            if (isSkin || isFurnitureOrClothing || colorSaturation > 25) {
               vibrantNonRoadPixels++;
             }
 
-            // 4. Horizontal Edge Contrast Check
+            // 6. Horizontal Edge Contrast Check
             if (x < width - 1) {
               const nextIdx = (y * width + (x + 1)) * 4;
               const nextBrightness = (pixels[nextIdx] + pixels[nextIdx + 1] + pixels[nextIdx + 2]) / 3;
-              if (Math.abs(brightness - nextBrightness) > 20) {
+              if (Math.abs(brightness - nextBrightness) > 28) {
                 edgeGradients++;
               }
             }
@@ -89,31 +112,33 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
         }
 
         const avgBrightness = totalBrightness / totalPixels;
+        const skinRatio = Math.round((skinPixels / totalPixels) * 100);
         const roadSpectrumRatio = Math.max(0, Math.min(100, Math.round((roadAsphaltPixels / totalPixels) * 100)));
         const cavityRatio = Math.max(0, Math.min(100, Math.round((shadowCavityPixels / totalPixels) * 100)));
         const nonRoadRatio = Math.max(0, Math.min(100, Math.round((vibrantNonRoadPixels / totalPixels) * 100)));
         const edgeDensityRatio = Math.max(0, Math.min(100, Math.round((edgeGradients / totalPixels) * 100)));
 
-        // Guard against pure black unreadable canvas or corrupted load
         const isUnreadableCanvas = avgBrightness < 5;
 
         // Semantic Filename Keyword Check
         const fileNameLower = fileName.toLowerCase();
         const roadKeywords = ['pothole', 'road', 'crack', 'street', 'asphalt', 'hole', 'damage', 'hwy', 'highway', 'lane', 'sector18', 'flyover'];
-        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'index', 'sidebar', 'poster', 'camera_photo', 'captured', 'camera', 'human', 'portrait', 'user', 'profile'];
+        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'index', 'sidebar', 'poster', 'camera_photo', 'captured', 'camera', 'human', 'portrait', 'user', 'profile', 'bg_'];
 
         const hasExplicitRoadKeyword = roadKeywords.some(k => fileNameLower.includes(k));
         const hasExplicitNonRoadKeyword = nonRoadKeywords.some(k => fileNameLower.includes(k));
 
-        // Adaptive Machine Learning Pipeline Validation Rules:
-        let stage1Pass = (roadSpectrumRatio >= 22 && nonRoadRatio <= 40) || (hasExplicitRoadKeyword && !hasExplicitNonRoadKeyword);
-        let stage2Pass = (cavityRatio >= 2.5 && cavityRatio <= 45) || (hasExplicitRoadKeyword && !hasExplicitNonRoadKeyword);
-        let stage3Pass = (edgeDensityRatio >= 3.0) || (hasExplicitRoadKeyword && !hasExplicitNonRoadKeyword);
+        // HARD REJECTION RULE: Reject if human skin detected, high non-road colors, or low asphalt content
+        const isHumanOrIndoorOrNonRoad = skinRatio >= 3 || nonRoadRatio >= 25 || roadSpectrumRatio < 35 || hasExplicitNonRoadKeyword;
+
+        let stage1Pass = !isHumanOrIndoorOrNonRoad && (roadSpectrumRatio >= 35);
+        let stage2Pass = !isHumanOrIndoorOrNonRoad && (cavityRatio >= 3.0 && cavityRatio <= 45);
+        let stage3Pass = !isHumanOrIndoorOrNonRoad && (edgeDensityRatio >= 4.0);
 
         let isPotholeDetected = stage1Pass && stage2Pass && stage3Pass && !isUnreadableCanvas;
+        let locationType = isHumanOrIndoorOrNonRoad ? 'Non-Road' : 'Road';
 
-        // Force rejection if selfie/human/non-road keywords, high non-road ratio, or low asphalt spectrum
-        if (hasExplicitNonRoadKeyword || nonRoadRatio > 35 || roadSpectrumRatio < 18) {
+        if (isHumanOrIndoorOrNonRoad) {
           isPotholeDetected = false;
           stage1Pass = false;
           stage2Pass = false;
