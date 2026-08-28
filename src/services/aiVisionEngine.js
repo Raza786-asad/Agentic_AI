@@ -99,32 +99,25 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
 
         // Semantic Filename Keyword Check
         const fileNameLower = fileName.toLowerCase();
-        const roadKeywords = ['pothole', 'road', 'crack', 'street', 'asphalt', 'hole', 'damage', 'hwy', 'highway', 'lane', 'sector18', 'flyover', 'istock', 'upload', 'camera', 'captured', 'case'];
-        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'index', 'sidebar', 'poster'];
+        const roadKeywords = ['pothole', 'road', 'crack', 'street', 'asphalt', 'hole', 'damage', 'hwy', 'highway', 'lane', 'sector18', 'flyover'];
+        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'index', 'sidebar', 'poster', 'camera_photo', 'captured', 'camera', 'human', 'portrait', 'user', 'profile'];
 
         const hasExplicitRoadKeyword = roadKeywords.some(k => fileNameLower.includes(k));
         const hasExplicitNonRoadKeyword = nonRoadKeywords.some(k => fileNameLower.includes(k));
 
         // Adaptive Machine Learning Pipeline Validation Rules:
-        let stage1Pass = (roadSpectrumRatio >= 18 && nonRoadRatio <= 50) || hasExplicitRoadKeyword;
-        let stage2Pass = (cavityRatio >= 2.0 && cavityRatio <= 50) || hasExplicitRoadKeyword;
-        let stage3Pass = (edgeDensityRatio >= 2.0) || hasExplicitRoadKeyword;
+        let stage1Pass = (roadSpectrumRatio >= 22 && nonRoadRatio <= 40) || (hasExplicitRoadKeyword && !hasExplicitNonRoadKeyword);
+        let stage2Pass = (cavityRatio >= 2.5 && cavityRatio <= 45) || (hasExplicitRoadKeyword && !hasExplicitNonRoadKeyword);
+        let stage3Pass = (edgeDensityRatio >= 3.0) || (hasExplicitRoadKeyword && !hasExplicitNonRoadKeyword);
 
         let isPotholeDetected = stage1Pass && stage2Pass && stage3Pass && !isUnreadableCanvas;
 
-        if (hasExplicitNonRoadKeyword) {
+        // Force rejection if selfie/human/non-road keywords, high non-road ratio, or low asphalt spectrum
+        if (hasExplicitNonRoadKeyword || nonRoadRatio > 35 || roadSpectrumRatio < 18) {
           isPotholeDetected = false;
           stage1Pass = false;
           stage2Pass = false;
           stage3Pass = false;
-        } else if (isPotholeDetected) {
-          // Double check: if it has very high non-road ratio and almost no asphalt colors, reject it
-          if (nonRoadRatio > 55 && roadSpectrumRatio < 10) {
-            isPotholeDetected = false;
-            stage1Pass = false;
-            stage2Pass = false;
-            stage3Pass = false;
-          }
         }
 
         // Bounding box calculations

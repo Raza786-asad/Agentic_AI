@@ -709,6 +709,21 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
               </div>
             )}
 
+            {/* Invalid Image / Non-Road Alert Callout */}
+            {!scanning && aiResult && !aiResult.isPotholeDetected && (
+              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-600 flex items-start gap-3 text-xs font-semibold animate-fade-down">
+                <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                <div>
+                  <h5 className="font-bold text-rose-700 uppercase tracking-wider text-[11px] mb-1">
+                    ⚠️ INVALID IMAGE / NO DEFECT DETECTED
+                  </h5>
+                  <p className="text-[11px] leading-relaxed text-rose-600 font-medium">
+                    Our Vision Scanner confirmed that this photo does not contain a valid road defect (pothole or crack). Work order dispatch is blocked for selfies and non-road photos. Please upload a clear photo of road damage.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Metrics Breakdown Grid */}
             {!scanning && aiResult && (
               <div className="space-y-4 text-xs">
