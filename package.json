@@ -25,6 +25,7 @@
     "india-state-district": "^1.0.5",
     "indian-cities-database": "^1.0.5",
     "indian-states-cities-list": "^1.0.5",
+    "jimp": "^1.6.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.475.0",
     "multer": "^2.2.0",
