@@ -70,6 +70,30 @@ let adminName = 'Md. Asad Raza';
 let adminPhone = '+91 9102510563';
 let adminAddress = 'Vadlamudi,Guntur-522213';
 
+// ─── Automated WhatsApp API Simulation ──────────────────────────────────────────
+async function sendWhatsAppWelcomeMessage(phone, name) {
+  if (!phone || phone.trim() === '') return;
+  
+  // Format to standard E.164 (e.g. +91XXXXXXXXXX)
+  let cleanPhone = phone.replace(/[^0-9]/g, '');
+  if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+  
+  const message = `Hello ${name}, welcome to RoadGuard Smart City Platform! 🛣️\nYour account has been successfully registered. You can now report road defects and help improve city infrastructure.`;
+
+  console.log(`[WhatsApp API Mock] Sending message from Admin to +${cleanPhone}: "${message}"`);
+  
+  // Note: For real production use, you would integrate Twilio or Meta WhatsApp Cloud API here:
+  /*
+  const twilio = require('twilio');
+  const client = new twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+  await client.messages.create({
+    body: message,
+    from: 'whatsapp:+14155238886', // Admin Twilio Number
+    to: `whatsapp:+${cleanPhone}`
+  });
+  */
+}
+
 /**
  * POST /api/auth/register
  */
@@ -94,6 +118,11 @@ router.post('/register', async (req, res) => {
 
     const user  = await db.createUser({ name, phone, email, password, role: registrationRole });
     const token = generateToken({ id: user.id, email: user.email, role: user.role, name: user.name });
+
+    // Send automated WhatsApp message
+    if (phone) {
+      sendWhatsAppWelcomeMessage(phone, name).catch(err => console.error('WhatsApp sending failed:', err));
+    }
 
     return res.status(201).json({ success: true, message: 'Account created successfully.', user, token });
   } catch (error) {
@@ -239,6 +268,35 @@ router.post('/admin-login', (req, res) => {
 
     return res.status(200).json({ success: true, user: adminUser, token });
   } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/auth/municipal-staff
+ * Returns all registered municipal staff members (plus fallback if none registered yet).
+ */
+router.get('/municipal-staff', verifyToken, async (req, res) => {
+  try {
+    const staff = await db.getMunicipalStaff();
+    
+    // Default fallback municipal staff members if none in DB so admin can test calling & assigning
+    const fallbackStaff = [
+      { id: 'muni_01', name: 'Vikram Singh', phone: '+91 98765 43210', email: 'vikram.municipal@roadguard.gov.in', role: 'municipal', department: 'Pothole Repair Crew Alpha' },
+      { id: 'muni_02', name: 'Rajesh Sharma', phone: '+91 91025 10563', email: 'rajesh.municipal@roadguard.gov.in', role: 'municipal', department: 'Rapid Asphalt Unit Bravo' },
+      { id: 'muni_03', name: 'Anjali Verma', phone: '+91 94733 28088', email: 'anjali.municipal@roadguard.gov.in', role: 'municipal', department: 'Heavy Road Maintenance Division' }
+    ];
+
+    const combined = [...staff];
+    fallbackStaff.forEach(fb => {
+      if (!combined.some(s => s.email === fb.email || (s.phone && fb.phone && s.phone.replace(/\D/g,'') === fb.phone.replace(/\D/g,'')))) {
+        combined.push(fb);
+      }
+    });
+
+    return res.status(200).json({ success: true, staff: combined });
+  } catch (error) {
+    console.error('[Municipal Staff GET Error]', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -128,94 +128,118 @@ function AppContent() {
     }
   }, []);
 
-  // Load persisted data from PostgreSQL once authenticated
+  // Load and live-poll persisted data from PostgreSQL once authenticated
   useEffect(() => {
-    if (!currentUser || dataLoaded) return;
+    if (!currentUser) return;
 
     const token = localStorage.getItem('roadnex_token');
     if (!token) return;
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    Promise.allSettled([
-      fetch('/api/reports',     { headers }).then(r => r.json()),
-      fetch('/api/complaints',  { headers }).then(r => r.json()),
-      fetch('/api/work-orders', { headers }).then(r => r.json()),
-    ]).then(([repRes, cmpRes, woRes]) => {
-      if (repRes.status === 'fulfilled' && repRes.value?.success && Array.isArray(repRes.value?.reports) && repRes.value.reports.length > 0) {
-        // Merge API reports into defects list (map to existing defect shape)
-        const apiDefects = repRes.value.reports.map(r => ({
-          id:           r.id,
-          location:     r.location,
-          type:         r.defectType,
-          severity:     r.severity,
-          confidence:   r.confidence,
-          area:         r.area,
-          depth:        r.depth,
-          complaints:   1,
-          waterlogging: r.waterlogging !== 'N/A',
-          priorityScore: r.priorityScore,
-          lat:          r.lat,
-          lng:          r.lng,
-          reportedDate: r.createdAt,
-          status:       r.status,
-          imageUrl:     r.imageUrl,
-          citizenName:  r.citizenName,
-          isMyUpload:   r.userId === currentUser.id,
-          state:        r.state,
-          district:     r.district,
-        }));
-        setDefects(prev => {
-          const ids = new Set(apiDefects.map(d => d.id));
-          return [...apiDefects, ...prev.filter(d => !ids.has(d.id))];
-        });
-      }
+    const loadFreshData = () => {
+      Promise.allSettled([
+        fetch('/api/reports',     { headers }).then(r => r.json()),
+        fetch('/api/complaints',  { headers }).then(r => r.json()),
+        fetch('/api/work-orders', { headers }).then(r => r.json()),
+      ]).then(([repRes, cmpRes, woRes]) => {
+        if (repRes.status === 'fulfilled' && repRes.value?.success && Array.isArray(repRes.value?.reports)) {
+          const apiDefects = repRes.value.reports.map(r => ({
+            id:           r.id,
+            location:     r.location,
+            type:         r.defectType,
+            severity:     r.severity,
+            confidence:   r.confidence,
+            area:         r.area,
+            depth:        r.depth,
+            complaints:   1,
+            waterlogging: r.waterlogging !== 'N/A',
+            priorityScore: r.priorityScore,
+            lat:          r.lat,
+            lng:          r.lng,
+            reportedDate: r.createdAt,
+            status:       r.status,
+            imageUrl:     r.imageUrl,
+            citizenName:  r.citizenName,
+            isMyUpload:   r.userId === currentUser.id,
+            state:        r.state,
+            district:     r.district,
+          }));
+          setDefects(prev => {
+            const map = new Map(prev.map(d => [d.id, d]));
+            apiDefects.forEach(d => map.set(d.id, { ...map.get(d.id), ...d }));
+            return Array.from(map.values());
+          });
+        }
 
-      if (cmpRes.status === 'fulfilled' && cmpRes.value?.success && Array.isArray(cmpRes.value?.complaints) && cmpRes.value.complaints.length > 0) {
-        const apiComplaints = cmpRes.value.complaints.map(c => ({
-          id:             c.id,
-          citizenName:    c.citizenName,
-          description:    c.description,
-          location:       c.location,
-          image:          c.image || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=500&auto=format&fit=crop&q=60',
-          date:           c.date,
-          status:         c.status,
-          aiSimilarity:   c.aiSimilarity,
-          matchedDefectId: c.matchedDefectId,
-          isMerged:       c.isMerged,
-          isMyUpload:     c.userId === currentUser.id,
-        }));
-        setComplaints(prev => {
-          const ids = new Set(apiComplaints.map(c => c.id));
-          return [...apiComplaints, ...prev.filter(c => !ids.has(c.id))];
-        });
-      }
+        if (cmpRes.status === 'fulfilled' && cmpRes.value?.success && Array.isArray(cmpRes.value?.complaints)) {
+          const apiComplaints = cmpRes.value.complaints.map(c => ({
+            id:              c.id,
+            reportId:        c.reportId,
+            userId:          c.userId,
+            citizenName:     c.citizenName || 'Citizen User',
+            citizenPhone:    c.citizenPhone || '',
+            citizenAddress:  c.citizenAddress || '',
+            citizenEmail:    c.citizenEmail || '',
+            description:     c.description,
+            location:        c.location,
+            image:           c.image || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=500&auto=format&fit=crop&q=60',
+            date:            c.date,
+            status:          c.status,
+            severity:        c.severity || 'Medium',
+            priorityScore:   c.priorityScore || 50,
+            defectType:      c.defectType || 'Pothole',
+            confidence:      c.confidence || 0,
+            lat:             c.lat || 16.222,
+            lng:             c.lng || 80.444,
+            aiSimilarity:    c.aiSimilarity,
+            matchedDefectId: c.matchedDefectId,
+            isMerged:        c.isMerged,
+            isMyUpload:      c.userId === currentUser.id,
+            repairedImageUrl: c.repairedImageUrl,
+            repairedAt:       c.repairedAt,
+            assignedStaff:    c.assignedStaff
+          }));
+          setComplaints(prev => {
+            const map = new Map(prev.map(c => [c.id, c]));
+            apiComplaints.forEach(c => map.set(c.id, { ...map.get(c.id), ...c }));
+            return Array.from(map.values());
+          });
+        }
 
-      if (woRes.status === 'fulfilled' && woRes.value?.success && Array.isArray(woRes.value?.workOrders) && woRes.value.workOrders.length > 0) {
-        const apiWorkOrders = woRes.value.workOrders.map(w => ({
-          id:               w.id,
-          defectId:         w.defectId,
-          defectType:       w.defectType,
-          location:         w.location,
-          lat:              w.lat,
-          lng:              w.lng,
-          severity:         w.severity,
-          priority:         w.priority,
-          priorityScore:    w.priorityScore,
-          status:           w.status,
-          contractor:       w.contractor,
-          targetCompletion: w.targetCompletion || '7 days',
-          estimatedCost:    w.estimatedCost,
-        }));
-        setWorkOrders(prev => {
-          const ids = new Set(apiWorkOrders.map(w => w.id));
-          return [...apiWorkOrders, ...prev.filter(w => !ids.has(w.id))];
-        });
-      }
+        if (woRes.status === 'fulfilled' && woRes.value?.success && Array.isArray(woRes.value?.workOrders)) {
+          const apiWorkOrders = woRes.value.workOrders.map(w => ({
+            id:               w.id,
+            defectId:         w.defectId,
+            defectType:       w.defectType,
+            location:         w.location,
+            lat:              w.lat,
+            lng:              w.lng,
+            severity:         w.severity,
+            priority:         w.priority,
+            priorityScore:    w.priorityScore,
+            status:           w.status,
+            contractor:       w.contractor,
+            targetCompletion: w.targetCompletion || '7 days',
+            estimatedCost:    w.estimatedCost,
+            repairedImageUrl: w.repairedImageUrl,
+            repairedAt:       w.repairedAt,
+          }));
+          setWorkOrders(prev => {
+            const map = new Map(prev.map(w => [w.id, w]));
+            apiWorkOrders.forEach(w => map.set(w.id, { ...map.get(w.id), ...w }));
+            return Array.from(map.values());
+          });
+        }
 
-      setDataLoaded(true);
-    }).catch(err => console.warn('[App] Failed to load DB data:', err));
-  }, [currentUser, dataLoaded]);
+        setDataLoaded(true);
+      }).catch(err => console.warn('[App Data Polling Warning]', err));
+    };
+
+    loadFreshData();
+    const intervalId = setInterval(loadFreshData, 3000);
+    return () => clearInterval(intervalId);
+  }, [currentUser]);
 
   const triggerToast = (msg, type = 'success') => {
     setToastMessage(msg);

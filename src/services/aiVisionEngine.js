@@ -1,12 +1,18 @@
 /**
- * RoadGuard AI - FileReader & Canvas Neural Feature Extractor
- * Fixed pure-black canvas blob bug. Strictly analyzes pixel HSV histograms, edge contrast, and surface textures.
+ * RoadGuard AI — Client-side Canvas Vision Engine (v3.0)
+ * 
+ * Architecture: 9-feature pixel analysis matching the Python ML training dataset.
+ * This is the fallback when the backend Python ML model is unavailable.
+ * The same 9 features as predict.py are computed here from HTML5 Canvas pixels.
+ *
+ * KEY FIX: Real potholes contain water, gravel, mud, dirt — they are NOT just
+ * "uniform gray asphalt". The old "non-road color ratio" threshold was rejecting
+ * real potholes. This version uses the same feature logic as predict.py.
  */
 
 export async function analyzeRoadImage(imageSrc, fileName = "") {
   return new Promise((resolve) => {
     const img = new Image();
-    // Support blob and base64 data URLs
     if (!imageSrc.startsWith('data:')) {
       img.crossOrigin = "Anonymous";
     }
@@ -16,235 +22,280 @@ export async function analyzeRoadImage(imageSrc, fileName = "") {
       try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
-        const width = 160;
-        const height = 120;
-        canvas.width = width;
-        canvas.height = height;
 
-        ctx.drawImage(img, 0, 0, width, height);
-        const imageData = ctx.getImageData(0, 0, width, height);
-        const pixels = imageData.data;
+        const W = 160;
+        const H = 120;
+        canvas.width  = W;
+        canvas.height = H;
 
-        const totalPixels = width * height;
-        let roadAsphaltPixels = 0;
-        let shadowCavityPixels = 0;
-        let vibrantNonRoadPixels = 0;
-        let skinPixels = 0;
-        let edgeGradients = 0;
-        let totalBrightness = 0;
+        ctx.drawImage(img, 0, 0, W, H);
+        const imageData = ctx.getImageData(0, 0, W, H);
+        const px = imageData.data;
 
-        let foundPoints = false;
-        let minX = width, maxX = 0, minY = height, maxY = 0;
+        const totalPixels = W * H;
 
-        for (let y = 0; y < height; y++) {
-          for (let x = 0; x < width; x++) {
-            const idx = (y * width + x) * 4;
-            const r = pixels[idx];
-            const g = pixels[idx + 1];
-            const b = pixels[idx + 2];
+        // ── Raw counters ──────────────────────────────────────────────────────
+        let totalLuminance   = 0;
+        let edgeCount        = 0;
+        let darkPixels       = 0;   // dark_region_ratio:    lum 5-60
+        let brightPixels     = 0;   // bright_region_ratio:  lum >= 180
+        let grayPixels       = 0;   // gray_consistency:     low-sat, mid-lum
+        let skinPixels       = 0;   // skin_tone_ratio
 
-            const brightness = (r + g + b) / 3;
-            totalBrightness += brightness;
+        // Block-based local contrast and uniform color ratio
+        const blockStds = [];
 
-            const maxChannel = Math.max(r, g, b);
-            const minChannel = Math.min(r, g, b);
-            const colorSaturation = maxChannel - minChannel;
+        // ── Per-pixel analysis ────────────────────────────────────────────────
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const i = (y * W + x) * 4;
+            const r = px[i], g = px[i+1], b = px[i+2];
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            totalLuminance += lum;
 
-            // 1. Human Skin Tone Detection (Face, arms, selfies)
-            const isSkin = (
-              (r > 85 && g > 40 && b > 20 && Math.abs(r - g) > 10 && r > g && g >= b) ||
-              (r > 140 && g > 90 && b > 65 && r > g && g > b && colorSaturation > 20)
-            );
-            if (isSkin) {
-              skinPixels++;
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            const sat  = maxC > 0 ? ((maxC - minC) / (maxC + 0.001)) * 100 : 0;
+
+            // dark_region_ratio: deep potholes, shadows
+            if (lum >= 5 && lum < 60)  darkPixels++;
+            // bright_region_ratio: water reflection, sky
+            if (lum >= 180)            brightPixels++;
+            // gray_consistency: asphalt (low sat, mid lum)
+            if (sat < 20 && lum >= 20 && lum <= 170) grayPixels++;
+
+            // skin_tone_ratio (YCbCr-like):
+            const Cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+            const Cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+            const isSkin = r > 80 && g > 40 && b > 20 &&
+                           r > g && g >= b &&
+                           Cb >= 77 && Cb <= 127 &&
+                           Cr >= 133 && Cr <= 173;
+            if (isSkin) skinPixels++;
+
+            // edge_density: horizontal gradient
+            if (x < W - 1) {
+              const ni = (y * W + (x + 1)) * 4;
+              const nextLum = 0.299 * px[ni] + 0.587 * px[ni+1] + 0.114 * px[ni+2];
+              if (Math.abs(lum - nextLum) > 15) edgeCount++;
             }
+          }
+        }
 
-            // 2. Road Asphalt Spectrum (Gravel, dark/mid-gray asphalt surface: saturation < 28, brightness 15-185)
-            const isAsphaltColor = (colorSaturation < 28 && brightness >= 15 && brightness <= 185 && !isSkin);
-            if (isAsphaltColor) {
-              roadAsphaltPixels++;
-            }
-
-            // 3. Dark Cavity Shadow Basin (Pothole core depression on asphalt: brightness 5-75)
-            const isDarkCavity = (brightness >= 5 && brightness < 75 && colorSaturation < 28 && !isSkin);
-            if (isDarkCavity) {
-              shadowCavityPixels++;
-              foundPoints = true;
-              if (x < minX) minX = x;
-              if (x > maxX) maxX = x;
-              if (y < minY) minY = y;
-              if (y > maxY) maxY = y;
-            }
-
-            // 4. Vibrant Non-Road (Greenery, sky, bright vibrant clothing)
-            const isVibrantNonRoad = (colorSaturation > 38 || (b > 125 && b > r + 20) || (g > 110 && g > r + 20));
-            if (isVibrantNonRoad || isSkin) {
-              vibrantNonRoadPixels++;
-            }
-
-            // 5. Edge Contrast Gradient (Fracture lines, pothole rims, jagged road breaks)
-            if (x < width - 1) {
-              const nextIdx = (y * width + (x + 1)) * 4;
-              const nextBrightness = (pixels[nextIdx] + pixels[nextIdx + 1] + pixels[nextIdx + 2]) / 3;
-              if (Math.abs(brightness - nextBrightness) > 18) {
-                edgeGradients++;
+        // ── Block local contrast (8x8 blocks) ───────────────────────────────
+        for (let by = 0; by < H - 8; by += 8) {
+          for (let bx = 0; bx < W - 8; bx += 8) {
+            const blockLums = [];
+            for (let dy = 0; dy < 8; dy++) {
+              for (let dx = 0; dx < 8; dx++) {
+                const i = ((by + dy) * W + (bx + dx)) * 4;
+                blockLums.push(0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2]);
               }
             }
+            const mean = blockLums.reduce((a, b) => a + b, 0) / 64;
+            const std  = Math.sqrt(blockLums.reduce((a, v) => a + (v - mean) ** 2, 0) / 64);
+            blockStds.push(std);
           }
         }
 
-        const avgBrightness = totalBrightness / totalPixels;
-        const skinRatio = Math.round((skinPixels / totalPixels) * 100);
-        const roadSpectrumRatio = Math.max(0, Math.min(100, Math.round((roadAsphaltPixels / totalPixels) * 100)));
-        const cavityRatio = Math.max(0, Math.min(100, Math.round((shadowCavityPixels / totalPixels) * 100)));
-        const nonRoadRatio = Math.max(0, Math.min(100, Math.round((vibrantNonRoadPixels / totalPixels) * 100)));
-        const edgeDensityRatio = Math.max(0, Math.min(100, Math.round((edgeGradients / totalPixels) * 100)));
+        // ── Derived 9 features ────────────────────────────────────────────────
+        // 1. texture_variance (std of luminance approximated as range/4)
+        const avgLum = totalLuminance / totalPixels;
+        // Estimate std from mean absolute deviation
+        let madSum = 0;
+        for (let y = 0; y < H; y++) {
+          for (let x = 0; x < W; x++) {
+            const i = (y * W + x) * 4;
+            const lum = 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2];
+            madSum += Math.abs(lum - avgLum);
+          }
+        }
+        const textureVariance = Math.min(100, (madSum / totalPixels) * 0.785 * 1.25);
 
-        const isUnreadableCanvas = avgBrightness < 5;
+        // 2. edge_density
+        const edgeDensity = Math.min(100, (edgeCount / totalPixels) * 100);
 
-        // Semantic Filename Keyword Check
-        const fileNameLower = fileName.toLowerCase();
-        const roadKeywords = ['pothole', 'road', 'crack', 'street', 'asphalt', 'hole', 'damage', 'hwy', 'highway', 'lane', 'sector18', 'flyover', 'plymouth'];
-        const nonRoadKeywords = ['skyline', 'building', 'car', 'dashboard', 'person', 'face', 'dog', 'cat', 'selfie', 'room', 'interior', 'document', 'screen', 'index', 'sidebar', 'poster', 'camera_photo', 'captured', 'camera', 'human', 'portrait', 'user', 'profile'];
+        // 3. dark_region_ratio
+        const darkRegionRatio = (darkPixels / totalPixels) * 100;
 
-        const hasExplicitRoadKeyword = roadKeywords.some(k => fileNameLower.includes(k));
-        const hasExplicitNonRoadKeyword = nonRoadKeywords.some(k => fileNameLower.includes(k));
+        // 4. bright_region_ratio
+        const brightRegionRatio = (brightPixels / totalPixels) * 100;
 
-        // ACCURATE DECISION RULES:
-        const isHumanOrNonRoad = skinRatio >= 4 || (nonRoadRatio >= 45 && skinRatio >= 2) || hasExplicitNonRoadKeyword;
+        // 5. color_saturation_mean (computed per pixel)
+        let satSum = 0;
+        for (let i = 0; i < px.length; i += 4) {
+          const r = px[i], g = px[i+1], b = px[i+2];
+          const maxC = Math.max(r, g, b);
+          const minC = Math.min(r, g, b);
+          satSum += maxC > 0 ? ((maxC - minC) / (maxC + 0.001)) * 100 : 0;
+        }
+        const colorSaturationMean = satSum / totalPixels;
 
+        // 6. gray_consistency
+        const grayConsistency = (grayPixels / totalPixels) * 100;
+
+        // 7. local_contrast
+        const localContrast = Math.min(100,
+          (blockStds.reduce((a, b) => a + b, 0) / blockStds.length) * 0.785);
+
+        // 8. skin_tone_ratio
+        const skinToneRatio = (skinPixels / totalPixels) * 100;
+
+        // 9. uniform_color_ratio (fraction of blocks with std < 8)
+        const uniformBlocks = blockStds.filter(s => s < 8).length;
+        const uniformColorRatio = (uniformBlocks / blockStds.length) * 100;
+
+        // ── Unreadable black canvas guard ─────────────────────────────────────
+        if (avgLum < 5) {
+          return resolve(buildFallbackResult('CANVAS_ERROR'));
+        }
+
+        // ── Decision Logic (mirrors predict.py thresholds) ───────────────────
+        // REJECT if selfie: skin > 8%
+        const isSelfie = skinToneRatio >= 8;
+
+        // REJECT if AI art: uniform colors + high saturation
+        const isAiArt  = uniformColorRatio >= 35 && colorSaturationMean >= 40;
+
+        // REJECT if indoor/non-road: very high saturation, minimal gray
+        const isNonRoad = colorSaturationMean >= 45 && grayConsistency < 10;
+
+        const isInvalidImage = isSelfie || isAiArt || isNonRoad;
+
+        // DETECT defect on road images:
         let isPotholeDetected = false;
-        let defectType = 'None';
-        let locationType = isHumanOrNonRoad ? 'Non-Road' : 'Road';
+        let defectType        = 'None';
+        let locationType      = isInvalidImage ? 'Non-Road' : 'Road';
 
-        if (!isHumanOrNonRoad && !isUnreadableCanvas) {
-          if (cavityRatio >= 2.0 && edgeDensityRatio >= 2.5) {
+        if (!isInvalidImage) {
+          // Road Crack: many edges, moderate dark
+          if (edgeDensity >= 15 && darkRegionRatio >= 10) {
             isPotholeDetected = true;
-            defectType = 'Pothole';
-          } else if (edgeDensityRatio >= 5.0) {
-            isPotholeDetected = true;
-            defectType = 'Crack';
-          } else if (hasExplicitRoadKeyword && cavityRatio >= 1.0) {
+            defectType = darkRegionRatio >= 18 ? 'Pothole' : 'Road Crack';
+          }
+          // Pothole: dark cavity with rough texture
+          else if (darkRegionRatio >= 18 && textureVariance >= 30) {
             isPotholeDetected = true;
             defectType = 'Pothole';
           }
+          // Surface damage: rough texture, some edges
+          else if (textureVariance >= 40 && edgeDensity >= 10) {
+            isPotholeDetected = true;
+            defectType = 'Surface Damage';
+          }
+          // Clean road: gray but no defect signals
         }
 
-        let stage1Pass = locationType === 'Road';
-        let stage2Pass = cavityRatio >= 2.0;
-        let stage3Pass = edgeDensityRatio >= 2.5;
+        // ── Severity and scoring ──────────────────────────────────────────────
+        const severityScore = 0.4 * textureVariance + 0.3 * edgeDensity + 0.3 * darkRegionRatio;
 
-        // Bounding box calculations
-        let boxX = 25, boxY = 25, boxWidth = 50, boxHeight = 45;
-        if (foundPoints && maxX > minX && maxY > minY) {
-          boxX = Math.max(5, Math.min(70, Math.round((minX / width) * 100)));
-          boxY = Math.max(5, Math.min(70, Math.round((minY / height) * 100)));
-          boxWidth = Math.max(20, Math.min(80, Math.round(((maxX - minX) / width) * 100)));
-          boxHeight = Math.max(20, Math.min(75, Math.round(((maxY - minY) / height) * 100)));
-        }
+        let severity = 'None', depthCm = 0, priorityScore = 0;
+        let areaM2 = '0';
 
-        let confidence = 94.0;
         if (isPotholeDetected) {
-          confidence = Math.min(99.4, (88.0 + (roadSpectrumRatio * 0.12) + (cavityRatio * 0.3)).toFixed(1));
-        } else {
-          confidence = Math.min(99.8, (91.0 + (nonRoadRatio * 0.2)).toFixed(1));
+          if (severityScore >= 55)      { severity = 'Critical'; }
+          else if (severityScore >= 38) { severity = 'High'; }
+          else if (severityScore >= 22) { severity = 'Medium'; }
+          else                          { severity = 'Low'; }
+
+          depthCm       = Math.max(1, Math.round(3 + darkRegionRatio * 0.15));
+          areaM2        = (0.8 + darkRegionRatio * 0.05).toFixed(1);
+          priorityScore = Math.min(100, Math.round(severityScore * 1.4));
         }
 
-        let severity = "Medium";
-        let depthCm = Math.max(1, Math.round(4 + cavityRatio * 0.7));
-        let areaM2 = (1.1 + (boxWidth * boxHeight * 0.0014)).toFixed(1);
-        let priorityScore = Math.max(0, Math.min(98, Math.round(50 + cavityRatio * 2.5)));
+        // ── Bounding box ──────────────────────────────────────────────────────
+        const boxX = Math.round(15 + darkRegionRatio * 0.1);
+        const boxY = Math.round(20 + textureVariance  * 0.05);
+        const boxW = Math.min(70, Math.round(30 + edgeDensity   * 0.6));
+        const boxH = Math.min(70, Math.round(25 + darkRegionRatio * 0.5));
 
-        if (depthCm > 10 || cavityRatio > 16) {
-          severity = "Critical";
-        } else if (depthCm > 6 || cavityRatio > 9) {
-          severity = "High";
+        // ── Confidence ────────────────────────────────────────────────────────
+        const confidence = isPotholeDetected
+          ? Math.min(99, Math.round(70 + severityScore * 0.4))
+          : Math.min(99, Math.round(80 + skinToneRatio + uniformColorRatio * 0.2));
+
+        // ── Assessment message ────────────────────────────────────────────────
+        let assessment;
+        if (isPotholeDetected) {
+          assessment = `ML Vision confirmed: ${defectType} detected. Texture: ${textureVariance.toFixed(1)}, Edges: ${edgeDensity.toFixed(1)}%, Dark cavity: ${darkRegionRatio.toFixed(1)}%. Severity: ${severity}.`;
+        } else if (isSelfie) {
+          assessment = `REJECTED: Human face/skin detected (${skinToneRatio.toFixed(1)}% skin pixels). This appears to be a selfie or portrait. Please upload a road damage photo.`;
+        } else if (isAiArt) {
+          assessment = `REJECTED: AI-generated or digital art pattern detected (uniform blocks: ${uniformColorRatio.toFixed(1)}%, saturation: ${colorSaturationMean.toFixed(1)}%). Real road photos have natural texture variation.`;
+        } else if (isNonRoad) {
+          assessment = `REJECTED: Non-road environment detected (saturation: ${colorSaturationMean.toFixed(1)}%, asphalt gray coverage: ${grayConsistency.toFixed(1)}%). Please photograph actual road damage.`;
+        } else {
+          assessment = `No road defect detected. Surface appears clean (texture: ${textureVariance.toFixed(1)}, edges: ${edgeDensity.toFixed(1)}%, gray: ${grayConsistency.toFixed(1)}%).`;
         }
 
         resolve({
           isPotholeDetected,
-          confidence: Math.abs(parseFloat(confidence)),
-          roadSpectrumRatio,
-          nonRoadRatio,
-          cavityRatio,
-          edgeDensityRatio,
+          confidence,
+          defectType: isPotholeDetected ? defectType : 'None',
+          locationType,
+          severity,
+          area: `${areaM2} m²`,
+          depth: `${depthCm} cm`,
+          waterlogging: defectType === 'Pothole' && darkRegionRatio > 20 ? 'Detected (High)' : (defectType === 'Pothole' ? 'Possible (Low)' : 'N/A'),
+          priorityScore,
+          boundingBox: { x: Math.min(70, boxX), y: Math.min(70, boxY), width: boxW, height: boxH },
+          assessment,
+          // Expose raw features for pipeline UI display
           mlPipeline: {
             stage1Pavement: {
-              pass: stage1Pass,
-              score: roadSpectrumRatio,
-              details: stage1Pass ? `Asphalt spectrum verified (${roadSpectrumRatio}% road gray)` : `Failed: Non-road color spectrum detected (${nonRoadRatio}%)`
+              pass:  grayConsistency >= 10 || !isInvalidImage,
+              score: parseFloat(grayConsistency.toFixed(1)),
+              details: `Asphalt gray coverage: ${grayConsistency.toFixed(1)}%`
             },
             stage2Cavity: {
-              pass: stage2Pass,
-              score: cavityRatio,
-              details: stage2Pass ? `Shadow cavity basin detected (${cavityRatio}% shadow density)` : `Failed: No shadow cavity detected (${cavityRatio}%)`
+              pass:  darkRegionRatio >= 10 || isPotholeDetected,
+              score: parseFloat(darkRegionRatio.toFixed(1)),
+              details: `Dark cavity ratio: ${darkRegionRatio.toFixed(1)}%`
             },
             stage3Edge: {
-              pass: stage3Pass,
-              score: edgeDensityRatio,
-              details: stage3Pass ? `Jagged pothole edge boundary confirmed (${edgeDensityRatio}% gradient)` : `Failed: Smooth non-road surface texture`
+              pass:  edgeDensity >= 10,
+              score: parseFloat(edgeDensity.toFixed(1)),
+              details: `Edge gradient density: ${edgeDensity.toFixed(1)}%`
             }
           },
-          defectType: isPotholeDetected ? (cavityRatio > 12 ? 'Pothole (Severe Cavity)' : 'Road Surface Erosion') : 'Non-Road / Invalid Image',
-          severity: isPotholeDetected ? severity : 'None',
-          area: isPotholeDetected ? `${areaM2} m²` : '0 m²',
-          depth: isPotholeDetected ? `${depthCm} cm` : '0 cm',
-          waterlogging: isPotholeDetected ? (cavityRatio > 10 ? 'Detected (High)' : 'Detected (Low)') : 'N/A',
-          priorityScore: isPotholeDetected ? priorityScore : 0,
-          boundingBox: { x: boxX, y: boxY, width: boxWidth, height: boxHeight },
-          assessment: isPotholeDetected
-            ? `ML Model confirmed: Asphalt spectrum (${roadSpectrumRatio}%), Cavity density (${cavityRatio}%), and Edge contrast (${edgeDensityRatio}%). Pothole verified with ${confidence}% AI confidence.`
-            : `ML Model REJECTED photo: High non-road color spectrum (${nonRoadRatio}%) and low asphalt surface texture (${roadSpectrumRatio}%). NO POTHOLE FOUND.`
+          // Legacy fields for backwards compat
+          roadSpectrumRatio:  parseFloat(grayConsistency.toFixed(1)),
+          nonRoadRatio:       parseFloat(colorSaturationMean.toFixed(1)),
+          cavityRatio:        parseFloat(darkRegionRatio.toFixed(1)),
+          edgeDensityRatio:   parseFloat(edgeDensity.toFixed(1)),
         });
+
       } catch (err) {
         console.error("AI Canvas Inspection Error:", err);
-        resolve({
-          isPotholeDetected: false,
-          confidence: 99.0,
-          roadSpectrumRatio: 0,
-          nonRoadRatio: 80,
-          cavityRatio: 0,
-          edgeDensityRatio: 0,
-          mlPipeline: {
-            stage1Pavement: { pass: false, score: 0, details: "Failed asphalt classifier" },
-            stage2Cavity: { pass: false, score: 0, details: "No cavity found" },
-            stage3Edge: { pass: false, score: 0, details: "No edge gradient found" }
-          },
-          defectType: 'Non-Road Image',
-          severity: 'None',
-          area: '0 m²',
-          depth: '0 cm',
-          waterlogging: 'N/A',
-          priorityScore: 0,
-          boundingBox: { x: 25, y: 25, width: 50, height: 45 },
-          assessment: 'No valid road surface or pothole detected in uploaded frame.'
-        });
+        resolve(buildFallbackResult('EXCEPTION'));
       }
     };
 
-    img.onerror = () => {
-      resolve({
-        isPotholeDetected: false,
-        confidence: 99.0,
-        roadSpectrumRatio: 0,
-        nonRoadRatio: 80,
-        cavityRatio: 0,
-        edgeDensityRatio: 0,
-        mlPipeline: {
-          stage1Pavement: { pass: false, score: 0, details: "Failed asphalt classifier" },
-          stage2Cavity: { pass: false, score: 0, details: "No cavity found" },
-          stage3Edge: { pass: false, score: 0, details: "No edge gradient found" }
-        },
-        defectType: 'Non-Road Image',
-        severity: 'None',
-        area: '0 m²',
-        depth: '0 cm',
-        waterlogging: 'N/A',
-        priorityScore: 0,
-        boundingBox: { x: 25, y: 25, width: 50, height: 45 },
-        assessment: 'No valid road surface or pothole detected in uploaded frame.'
-      });
-    };
+    img.onerror = () => resolve(buildFallbackResult('IMG_LOAD_ERROR'));
   });
+}
+
+function buildFallbackResult(reason) {
+  return {
+    isPotholeDetected: false,
+    confidence: 0,
+    defectType: 'None',
+    locationType: 'Non-Road',
+    severity: 'None',
+    area: '0 m²',
+    depth: '0 cm',
+    waterlogging: 'N/A',
+    priorityScore: 0,
+    boundingBox: { x: 25, y: 25, width: 50, height: 45 },
+    assessment: `Image analysis failed (${reason}). Please try a different photo.`,
+    mlPipeline: {
+      stage1Pavement: { pass: false, score: 0, details: 'Analysis failed' },
+      stage2Cavity:   { pass: false, score: 0, details: 'Analysis failed' },
+      stage3Edge:     { pass: false, score: 0, details: 'Analysis failed' }
+    },
+    roadSpectrumRatio: 0,
+    nonRoadRatio: 0,
+    cavityRatio: 0,
+    edgeDensityRatio: 0,
+  };
 }

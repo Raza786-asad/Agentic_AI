@@ -165,6 +165,16 @@ export async function updateGoogleUserPhone(userId, phone) {
 }
 
 /**
+ * Return all registered municipal staff members.
+ */
+export async function getMunicipalStaff() {
+  const { rows } = await pool.query(
+    "SELECT * FROM users WHERE role = 'municipal' ORDER BY created_at DESC"
+  );
+  return rows.map(sanitize);
+}
+
+/**
  * Return all users (admin utility — never expose passwords).
  */
 export async function getUsers() {

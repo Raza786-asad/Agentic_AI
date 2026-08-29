@@ -85,6 +85,14 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Location is required.' });
     }
 
+    // STRICT AI GUARD: Reject non-road / non-defect uploads!
+    if (!isPothole || defectType === 'None' || defectType === 'Non-Road / Invalid Image' || severity === 'None') {
+      return res.status(400).json({
+        success: false,
+        error: '❌ UPLOAD REJECTED BY AI VISION GUARD: Uploaded picture is NOT a valid road pothole or crack. Submissions for selfies, AI-generated images, or non-road photos are blocked.'
+      });
+    }
+
     const id = generateReportId();
 
     const { rows } = await pool.query(

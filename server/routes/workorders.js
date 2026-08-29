@@ -78,7 +78,7 @@ router.post('/', verifyToken, async (req, res) => {
         (id, report_id, defect_id, defect_type, location, lat, lng,
          severity, priority, priority_score, status, contractor,
          target_completion, estimated_cost)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'Pending',$11,$12,$13)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'Dispatched',$11,$12,$13)
        RETURNING *`,
       [
         id, reportId, defectId, defectType, location, lat, lng,
@@ -86,6 +86,27 @@ router.post('/', verifyToken, async (req, res) => {
         targetCompletion, estimatedCost
       ]
     );
+
+    // Sync status to linked complaints and reports
+    try {
+      const dispatchedStatus = `Dispatched to ${contractor || 'Municipal Staff'}`;
+      if (defectId || reportId || id) {
+        await pool.query(
+          `UPDATE complaints
+           SET status = $1, updated_at = NOW()
+           WHERE id = $2 OR report_id = $3 OR matched_defect_id = $2 OR id = $3`,
+          [dispatchedStatus, defectId || '', reportId || '']
+        );
+      }
+      if (reportId) {
+        await pool.query(
+          `UPDATE reports SET status = 'In Progress', updated_at = NOW() WHERE id = $1`,
+          [reportId]
+        );
+      }
+    } catch (syncErr) {
+      console.warn('[WorkOrders sync warning]', syncErr);
+    }
 
     res.status(201).json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
   } catch (err) {
@@ -98,8 +119,8 @@ router.post('/', verifyToken, async (req, res) => {
 
 router.patch('/:id', verifyToken, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'Admin access required.' });
+    if (req.user.role !== 'admin' && req.user.role !== 'municipal') {
+      return res.status(403).json({ success: false, error: 'Authorization required.' });
     }
 
     const { status, contractor, estimatedCost, targetCompletion } = req.body;
@@ -118,7 +139,31 @@ router.patch('/:id', verifyToken, async (req, res) => {
     );
 
     if (rows.length === 0) return res.status(404).json({ success: false, error: 'Work order not found.' });
-    res.json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
+    const wo = rowToWorkOrder(rows[0]);
+
+    // If status is Completed, sync complaints and reports
+    if (status === 'Completed') {
+      try {
+        if (wo.defectId || wo.reportId || wo.id) {
+          await pool.query(
+            `UPDATE complaints
+             SET status = 'Completed', updated_at = NOW()
+             WHERE id = $1 OR report_id = $2 OR matched_defect_id = $1 OR report_id = $1`,
+            [wo.defectId || wo.id, wo.reportId || '']
+          );
+        }
+        if (wo.reportId) {
+          await pool.query(
+            `UPDATE reports SET status = 'Resolved', updated_at = NOW() WHERE id = $1`,
+            [wo.reportId]
+          );
+        }
+      } catch (syncErr) {
+        console.warn('[WorkOrders PATCH sync warning]', syncErr);
+      }
+    }
+
+    res.json({ success: true, workOrder: wo });
   } catch (err) {
     console.error('[WorkOrders PATCH]', err);
     res.status(500).json({ success: false, error: err.message });
@@ -133,29 +178,45 @@ router.patch('/:id/submit-repair', verifyToken, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Municipal operator credentials required.' });
     }
 
-    const { repairedImageUrl, repairedLat, repairedLng } = req.body;
-
-    if (!repairedImageUrl) {
-      return res.status(400).json({ success: false, error: 'repairedImageUrl is required.' });
-    }
+    const { repairedImageUrl, repairedLat, repairedLng, status = 'Completed' } = req.body;
 
     const { rows } = await pool.query(
       `UPDATE work_orders
        SET
-         status             = 'Pending Verification',
-         repaired_image_url = $1,
-         repaired_lat       = $2,
-         repaired_lng       = $3,
+         status             = $1,
+         repaired_image_url = COALESCE($2, repaired_image_url),
+         repaired_lat       = COALESCE($3, repaired_lat),
+         repaired_lng       = COALESCE($4, repaired_lng),
          repaired_at        = NOW(),
-         municipal_id       = $4,
+         municipal_id       = $5,
          updated_at         = NOW()
-       WHERE id = $5
+       WHERE id = $6
        RETURNING *`,
-      [repairedImageUrl, repairedLat || 0, repairedLng || 0, req.user.id, req.params.id]
+      [status, repairedImageUrl || null, repairedLat || 0, repairedLng || 0, req.user.id, req.params.id]
     );
 
     if (rows.length === 0) return res.status(404).json({ success: false, error: 'Work order not found.' });
-    res.json({ success: true, workOrder: rowToWorkOrder(rows[0]) });
+    const wo = rowToWorkOrder(rows[0]);
+
+    // Sync complaints and reports to Completed/Resolved
+    try {
+      await pool.query(
+        `UPDATE complaints
+         SET status = 'Completed', updated_at = NOW()
+         WHERE id = $1 OR report_id = $2 OR matched_defect_id = $1`,
+        [wo.defectId || wo.id, wo.reportId || '']
+      );
+      if (wo.reportId) {
+        await pool.query(
+          `UPDATE reports SET status = 'Resolved', updated_at = NOW() WHERE id = $1`,
+          [wo.reportId]
+        );
+      }
+    } catch (syncErr) {
+      console.warn('[WorkOrders submit-repair sync warning]', syncErr);
+    }
+
+    res.json({ success: true, workOrder: wo });
   } catch (err) {
     console.error('[WorkOrders submit-repair PATCH]', err);
     res.status(500).json({ success: false, error: err.message });

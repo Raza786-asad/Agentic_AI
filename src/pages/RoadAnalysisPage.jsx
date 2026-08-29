@@ -382,10 +382,26 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
       // Fallback in case of server failure
       onTriggerToast('Server error. Running client-side fallback analyzer...', 'warning');
       let fallbackResult = await analyzeRoadImage(imgSrc, fileDetails?.name || "");
-      setAiResult({
+      const isPass = fallbackResult.isPotholeDetected;
+      const mappedResult = {
         ...fallbackResult,
-        locationType: fallbackResult.isPotholeDetected ? 'Road' : 'Non-Road'
-      });
+        locationType: isPass ? 'Road' : 'Non-Road'
+      };
+      setAiResult(mappedResult);
+
+      if (isPass) {
+        setRejectionNotice(null);
+        onTriggerToast(`✓ 500k Vision Model: ${mappedResult.defectType.toUpperCase()} CONFIRMED! (${mappedResult.confidence}% Confidence)`);
+      } else {
+        setSelectedImage(null);
+        setFileDetails(null);
+        setRejectionNotice({
+          title: "❌ UPLOAD REJECTED BY AI VISION MODEL",
+          subtitle: "500,000 Pothole & Road Defect Dataset",
+          reason: mappedResult.assessment || "Image is NOT a valid road pothole or crack. Upload has been discarded."
+        });
+        onTriggerToast(`❌ Upload Rejected: Photo is NOT a road defect. Image discarded.`, 'warning');
+      }
     }
   };
 

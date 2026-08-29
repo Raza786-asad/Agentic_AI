@@ -145,6 +145,36 @@ export default function MunicipalDashboardPage({ onTriggerToast }) {
     }
   };
 
+  // Direct Mark Complete Handler for Municipal Staff
+  const handleMarkComplete = async (woId, e) => {
+    if (e) e.stopPropagation();
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('roadnex_token');
+      const res = await fetch(`/api/work-orders/${woId || selectedWO?.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ status: 'Completed' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (onTriggerToast) onTriggerToast(`Work order ${woId || selectedWO?.id} marked as Completed & Resolved!`);
+        await loadWorkOrders();
+        setSelectedWO(null);
+      } else {
+        alert(data.error || 'Failed to update status.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating status.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Submit Repair Report
   const handleSubmitRepair = async (e) => {
     e.preventDefault();
@@ -169,13 +199,13 @@ export default function MunicipalDashboardPage({ onTriggerToast }) {
         body: JSON.stringify({
           repairedImageUrl: imageUrl,
           repairedLat: currentCoords.lat,
-          repairedLng: currentCoords.lng
+          repairedLng: currentCoords.lng,
+          status: 'Completed'
         })
       });
       const data = await res.json();
       if (data.success) {
-        onTriggerToast(`Work order ${selectedWO.id} submitted for Admin verification.`);
-        // Reload list and update selected
+        if (onTriggerToast) onTriggerToast(`Work order ${selectedWO.id} marked as Completed & Resolved!`);
         await loadWorkOrders();
         setSelectedWO(null);
       } else {
@@ -258,8 +288,16 @@ export default function MunicipalDashboardPage({ onTriggerToast }) {
                       <p className="text-[10px] text-custom-sage font-medium mt-1 truncate">{wo.location}</p>
 
                       <div className="mt-3 flex justify-between items-center text-[10px] text-custom-sage font-semibold">
-                        <span>Dispatched to Contractor</span>
-                        <span className="text-custom-taupe font-bold">{wo.contractor}</span>
+                        <span>Dispatched to Staff: <strong className="text-custom-taupe">{wo.contractor}</strong></span>
+                        {wo.status !== 'Completed' && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleMarkComplete(wo.id, e)}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer font-sans"
+                          >
+                            <Check className="w-3 h-3" /> Mark Done
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

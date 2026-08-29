@@ -14,13 +14,13 @@ function rowToComplaint(r) {
     reportId:        r.report_id,
     userId:          r.user_id,
     citizenName:     r.citizen_name,
-    citizenPhone:    r.citizen_phone || '9876543210',
-    citizenAddress:  r.citizen_address || 'Not specified',
+    citizenPhone:    r.citizen_phone || '',
+    citizenAddress:  r.citizen_address || '',
     citizenEmail:    r.citizen_email || '',
     description:     r.description,
     location:        r.location,
     image:           r.image_url,  // keep field name compatible with ComplaintsPage
-    status:          r.report_status || r.status,
+    status:          r.status || r.report_status,
     aiSimilarity:    parseFloat(r.ai_similarity || 0),
     matchedDefectId: r.matched_defect_id,
     isMerged:        r.is_merged,
@@ -31,7 +31,10 @@ function rowToComplaint(r) {
     confidence:      parseFloat(r.confidence || 0),
     lat:             r.lat ? parseFloat(r.lat) : 16.222,
     lng:             r.lng ? parseFloat(r.lng) : 80.444,
-    whatsappVerified: r.whatsapp_verified || false
+    whatsappVerified: r.whatsapp_verified || false,
+    repairedImageUrl: r.repaired_image_url || null,
+    repairedAt:       r.repaired_at || null,
+    assignedStaff:    r.contractor || null
   };
 }
 
@@ -47,10 +50,12 @@ router.get('/', verifyToken, async (req, res) => {
         `SELECT 
            c.*, 
            r.status AS report_status, r.severity, r.priority_score, r.defect_type, r.confidence, r.lat, r.lng,
-           u.phone AS citizen_phone, u.address AS citizen_address, u.email AS citizen_email
+           u.phone AS citizen_phone, u.address AS citizen_address, u.email AS citizen_email,
+           wo.repaired_image_url, wo.repaired_at, wo.contractor
          FROM complaints c
          LEFT JOIN reports r ON c.report_id = r.id
          LEFT JOIN users u ON c.user_id = u.id
+         LEFT JOIN work_orders wo ON (c.id = wo.defect_id OR c.report_id = wo.report_id OR c.matched_defect_id = wo.defect_id)
          ORDER BY c.created_at DESC LIMIT 200`
       ));
     } else {
@@ -58,10 +63,12 @@ router.get('/', verifyToken, async (req, res) => {
         `SELECT 
            c.*, 
            r.status AS report_status, r.severity, r.priority_score, r.defect_type, r.confidence, r.lat, r.lng,
-           u.phone AS citizen_phone, u.address AS citizen_address, u.email AS citizen_email
+           u.phone AS citizen_phone, u.address AS citizen_address, u.email AS citizen_email,
+           wo.repaired_image_url, wo.repaired_at, wo.contractor
          FROM complaints c
          LEFT JOIN reports r ON c.report_id = r.id
          LEFT JOIN users u ON c.user_id = u.id
+         LEFT JOIN work_orders wo ON (c.id = wo.defect_id OR c.report_id = wo.report_id OR c.matched_defect_id = wo.defect_id)
          WHERE c.user_id = $1 
          ORDER BY c.created_at DESC`,
         [user.id]

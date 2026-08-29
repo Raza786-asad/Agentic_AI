@@ -1,0 +1,16 @@
+{
+  "features": [
+    "texture_variance",
+    "edge_density",
+    "dark_region_ratio",
+    "bright_region_ratio",
+    "color_saturation_mean",
+    "gray_consistency",
+    "local_contrast",
+    "skin_tone_ratio",
+    "uniform_color_ratio"
+  ],
+  "defect_accuracy": 0.9998699947997921,
+  "location_accuracy": 0.9998899955998239,
+  "trained_on": 100000
+}
