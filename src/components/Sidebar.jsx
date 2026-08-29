@@ -16,7 +16,6 @@ export default function Sidebar({ currentUser, onLogout }) {
     ? [
         { path: '/admin/dashboard',   label: 'Command Center',    icon: LayoutDashboard, badge: null },
         { path: '/admin/reports',     label: 'Citizen Complaints', icon: MessageSquareWarning, badge: 'new' },
-        { path: '/admin/agents',      label: 'AI Agent Control Center', icon: Cpu, badge: '8-Agents' },
         { path: '/admin/map',         label: 'GIS Heatmap',       icon: Map,            badge: null },
         { path: '/admin/analytics',   label: 'Analytics & Risk',  icon: BarChart3,      badge: null },
         { path: '/admin/settings',    label: 'Settings',          icon: Settings,       badge: null },
@@ -24,12 +23,10 @@ export default function Sidebar({ currentUser, onLogout }) {
     : isMunicipal
       ? [
           { path: '/municipal/dashboard', label: 'Dispatch Queue',  icon: LayoutDashboard, badge: null },
-          { path: '/admin/agents',        label: 'AI Agent Control Center', icon: Cpu, badge: '8-Agents' },
           { path: '/municipal/settings',  label: 'Settings',        icon: Settings,       badge: null },
         ]
       : [
           { path: '/user/dashboard',    label: 'Citizen Hub',        icon: LayoutDashboard, badge: null },
-          { path: '/admin/agents',      label: 'AI Agent Control Center', icon: Cpu, badge: '8-Agents' },
           { path: '/user/report',       label: 'Report Road Issue',  icon: Scan,           badge: null },
           { path: '/user/my-reports',   label: 'My Complaints',      icon: MessageSquareWarning, badge: null },
           { path: '/user/map',          label: 'Smart GIS Map',      icon: Map,            badge: null },

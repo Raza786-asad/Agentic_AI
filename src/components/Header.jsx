@@ -58,16 +58,6 @@ export default function Header({ currentUser, onLogout, unreadCount, notificatio
           </div>
         )}
 
-        {/* AI Agent Orchestrator Trigger Button */}
-        <button
-          type="button"
-          onClick={() => setShowAgentModal(true)}
-          className="px-3 py-2 rounded-xl bg-custom-terra/10 hover:bg-custom-terra/20 text-custom-terra border border-custom-terra/30 transition-all text-xs font-black flex items-center gap-1.5 cursor-pointer shadow-sm animate-pulse"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>🤖 AI Agent Studio</span>
-        </button>
-
         {/* Notifications Dropdown Trigger */}
         <div className="relative">
           <button
