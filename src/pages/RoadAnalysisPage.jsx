@@ -42,6 +42,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
   });
 
   const [aiResult, setAiResult] = useState(null);
+  const [citizenDescription, setCitizenDescription] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(100);
 
@@ -509,6 +510,20 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
               </div>
             )}
 
+            {/* Citizen Description / Issue Note Input */}
+            <div className="pt-2 border-t border-custom-sage/20 space-y-1.5">
+              <label className="text-[11px] font-bold text-custom-taupe flex items-center justify-between">
+                <span>✍️ Issue Description / Citizen Notes (Optional)</span>
+                <span className="text-[10px] text-custom-sage font-mono">Sent with photo to AI Agents</span>
+              </label>
+              <textarea
+                rows={2}
+                value={citizenDescription}
+                onChange={(e) => setCitizenDescription(e.target.value)}
+                placeholder="Describe what you observed (e.g. Deep pothole causing traffic delay near GT Road junction...)"
+                className="w-full p-3 bg-custom-cream border border-custom-sage/30 rounded-xl text-xs font-medium text-custom-taupe focus:outline-none focus:border-custom-terra transition-colors placeholder:text-custom-sage/60"
+              />
+            </div>
           </div>
 
           {/* Step 2: Image Canvas & Neural Scanner Card */}
@@ -816,6 +831,7 @@ export default function RoadAnalysisPage({ onTriggerToast, onAddWorkOrder }) {
                           imageUrl: selectedImage,
                           priorityScore: aiResult.priorityScore,
                           confidence: aiResult.confidence,
+                          description: citizenDescription.trim() || aiResult.assessment,
                           assessment: aiResult.assessment,
                           area: aiResult.area,
                           depth: aiResult.depth,
