@@ -198,13 +198,16 @@ router.patch('/:id/submit-repair', verifyToken, async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ success: false, error: 'Work order not found.' });
     const wo = rowToWorkOrder(rows[0]);
 
-    // Sync complaints and reports to Completed/Resolved
+    // Sync complaints and reports to Completed/Resolved with repair proof photo
     try {
       await pool.query(
         `UPDATE complaints
-         SET status = 'Completed', updated_at = NOW()
-         WHERE id = $1 OR report_id = $2 OR matched_defect_id = $1`,
-        [wo.defectId || wo.id, wo.reportId || '']
+         SET status = 'Completed', 
+             repaired_image_url = COALESCE($1, repaired_image_url),
+             repaired_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $2 OR report_id = $3 OR matched_defect_id = $2 OR id = $3`,
+        [repairedImageUrl || null, wo.defectId || wo.id, wo.reportId || '']
       );
       if (wo.reportId) {
         await pool.query(

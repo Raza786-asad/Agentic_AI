@@ -102,12 +102,18 @@ router.post('/', verifyToken, async (req, res) => {
       [id, reportId || null, user.id, user.name, description, location, imageUrl || null, aiSimilarity || 0, matchedDefectId || null]
     );
 
-    // Attach missing joined fields so the frontend state doesn't default to mock data
-    const userResult = await pool.query('SELECT phone, address, email FROM users WHERE id = $1', [user.id]);
-    if (userResult.rows.length > 0) {
-      rows[0].citizen_phone = userResult.rows[0].phone;
-      rows[0].citizen_address = userResult.rows[0].address;
-      rows[0].citizen_email = userResult.rows[0].email;
+    // Automatically create a Work Order in Municipal Dispatch Queue
+    try {
+      const woId = `WO-${Math.floor(1000 + Math.random() * 9000)}`;
+      await pool.query(
+        `INSERT INTO work_orders
+          (id, report_id, defect_id, defect_type, location, lat, lng, severity, priority, priority_score, status, contractor)
+         VALUES ($1, $2, $3, 'Pothole', $4, 16.222, 80.444, 'High', 'High', 85, 'Dispatched', 'Municipal Corporation (Zone 4)')
+         ON CONFLICT (id) DO NOTHING`,
+        [woId, reportId || null, id, location]
+      );
+    } catch (woErr) {
+      console.warn('[Auto Work Order creation warning]', woErr.message);
     }
 
     res.status(201).json({ success: true, complaint: rowToComplaint(rows[0]) });
