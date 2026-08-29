@@ -1,4 +1,4 @@
-# 🛣️ ROADNEX (RoadGuard AI) — Autonomous Smart City Infrastructure & Defect Resolution Platform
+# 🛣️ ROADEX — Agentic AI Road Safety & Infrastructure Platform
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18%2B-emerald?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![React 19](https://img.shields.io/badge/React-19.0-cyan?style=for-the-badge&logo=react)](https://react.dev/)
@@ -7,154 +7,115 @@
 [![Google Gemini AI](https://img.shields.io/badge/AI-Google_Gemini-orange?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemini/)
 [![Vite](https://img.shields.io/badge/Vite-6.1-purple?style=for-the-badge&logo=vite)](https://vitejs.dev/)
 
-> **ROADNEX** (formerly RoadGuard AI) is a state-of-the-art **Autonomous Urban Infrastructure Monitoring & Defect Resolution Platform**. Powered by Neural Computer Vision, GIS Mapping, and an Express + PostgreSQL backend, ROADNEX automates the lifecycle of road damage detection (potholes, cracks, waterlogging), citizen complaint deduplication, voice-assisted verification, and real-time municipal staff work order dispatching.
+> **ROADEX** is a state-of-the-art **Agentic AI Road Safety & Infrastructure Platform**. Powered by an 8-Agent Modular Architecture, Neural Computer Vision, GIS Mapping, and an Express + PostgreSQL backend, ROADEX automates the complete lifecycle of road safety issue detection, citizen identity verification, risk priority assessment, authority routing, and real-time municipal resolution proof synchronization.
 
 ---
 
-## 🌟 Executive Features & Platform Highlights
+## 🤖 8-Agent Modular Architecture & DAG Pipeline
 
-### 1. 🛰️ Orbital LiDAR 3D City Sweep & Telemetry Splash
-- Immersive 3D orbital satellite radar simulation sweeping city grids.
-- Identifies structural anomalies, dispatches autonomous drone inspection sweeps, and verifies grid integrity upon launch.
+ROADEX operates on a **Decoupled 8-Agent Orchestration Architecture** where a central Orchestrator Agent coordinates execution across 7 specialized AI agents:
 
-### 2. 🤖 Gemini AI & Neural Vision Classification
-- Instant photographic defect classifier detecting **Potholes**, **Cracks**, **Rutting**, and **Waterlogging**.
-- Calculates confidence percentages, defect severity (High/Medium/Low), priority scores (1-100), estimated repair area ($m^2$), and depth ($cm$).
-- Dual-engine fallback integrating Google Generative AI (Gemini 3.5 Flash) for image analysis.
+```mermaid
+graph TD
+    A[Citizen Complaint Payload] --> B[1. ORCHESTRATOR AGENT]
+    B --> C[2. COMPLAINT ANALYSIS AGENT]
+    B --> D[3. IMAGE / ROAD DETECTION AGENT]
+    B --> E[4. LOCATION INTELLIGENCE AGENT]
+    B --> F[5. PRIORITY & RISK ASSESSMENT AGENT]
+    B --> G[6. CITIZEN VERIFICATION AGENT]
+    B --> H[7. AUTHORITY ROUTING AGENT]
+    B --> I[8. NOTIFICATION AGENT]
+    I --> J[Live Dashboard & Work Order Dispatch]
+```
 
-### 3. 👥 Multi-Role Portal Architecture
+### Specialized Agents & Responsibilities
 
-| Portal Role | Description | Key Functions |
-| :--- | :--- | :--- |
-| **🏛️ Municipal Admin** | Central Command Center | Case deduplication, priority scoring, work order dispatch, staff calling, analytics |
-| **👷 Municipal Staff** | Field Operations Portal | Assigned tickets queue, GPS location lock, post-repair photo proof, 1-click completion |
-| **👤 Citizen User** | Public Reporting Portal | Camera capture/file upload, live GPS geocoding via OpenStreetMap, case status tracking |
+| Agent Name | Primary Responsibility | Input Payload | Output Payload |
+| :--- | :--- | :--- | :--- |
+| **1. Orchestrator Agent** | DAG Pipeline Coordinator & Fallback Guard | Raw Complaint Payload | Execution Logs, Step Timings, Pipeline Summary |
+| **2. Complaint Analysis Agent** | NLP Issue Classification & Intent Extraction | Text Description, Category | Identified Issue, Confidence (%), Reasoning |
+| **3. Image / Road Detection Agent** | Neural Computer Vision Surface Classifier | Image URL / Camera Frame | Defect Label, Bounding Box, Depth & Area ($m^2$) |
+| **4. Location Intelligence Agent** | Spatial GIS Geocoding & Jurisdiction Mapper | Lat / Lng, Raw Address | City Zone, Road Classification, Authority Jurisdiction |
+| **5. Priority & Risk Agent** | Multi-Factor Urgency Risk Calculation | Severity, Road Type, Waterlogging | Priority (CRITICAL/HIGH/MEDIUM/LOW), Risk Score ($1-100$) |
+| **6. Citizen Verification Agent** | JWT Profile Identity & Privacy Guard | Authenticated User Token | Verified Citizen Identity, Masked Contact Details |
+| **7. Authority Routing Agent** | Jurisdiction & Repair Crew Matcher | Issue Type, Location Zone | Assigned Authority (e.g. NHAI vs Municipal), Officer |
+| **8. Notification Agent** | Multi-Channel Alert Gateway Dispatcher | Ticket Details, Contact | Dispatch Confirmation (In-App, SMS, WhatsApp) |
 
-### 4. 📞 Voice Verification & Dialing Gateway
-- Built-in Voice Calling Simulation featuring live audio synthesis (`SpeechSynthesis API`), real-time dialogue subtitles, and system `tel:` protocol triggers.
-- **Dual Calling Support**: Admin can call citizens directly to verify reports OR call registered municipal staff members directly from the inspect modal.
+---
 
-### 5. 👷 Registered Municipal Staff Assignment & Dispatch
-- Querying registered municipal staff members (`role = 'municipal'`) from PostgreSQL.
-- Admin dropdown selector allows assigning work orders directly to specific staff (e.g. *Vikram Singh*, *Rajesh Sharma*, *Anjali Verma*).
-- Dispatched tickets instantly appear in the assigned staff member's personal dashboard queue.
+## 🔌 Specialized Agent API Endpoints
 
-### 6. ⚡ Real-Time Live Data Polling & Synchronization
-- **3-Second Live Polling Engine**: Status updates and repair proofs sync live across all active Admin, Staff, and Citizen browser sessions without needing manual page refreshes.
-- **Before & After Resolution Proof**: Side-by-side photographic comparison showing the original defect photo next to the live repaired road photo uploaded by municipal staff.
+```http
+POST /api/agents/orchestrate     # Runs full 8-agent pipeline
+POST /api/agents/analyze         # Executes Complaint Analysis Agent
+POST /api/agents/detect          # Executes Image / Road Detection Agent
+POST /api/agents/location        # Executes Location Intelligence Agent
+POST /api/agents/priority        # Executes Priority & Risk Assessment Agent
+POST /api/agents/verify          # Executes Citizen Verification Agent
+POST /api/agents/route           # Executes Authority Routing Agent
+POST /api/agents/notify          # Executes Notification Agent
+GET  /api/agents/status/:id      # Returns live agent pipeline execution status
+```
 
-### 7. 📲 Automated WhatsApp Integration
-- Automated WhatsApp welcome message trigger upon new user/citizen registration.
+---
+
+## 🌟 Executive Features & Demo Highlights
+
+1. **🤖 AI Agent Control Center (`/admin/agents`)**: Visual DAG topology dashboard with **Teacher Demo Mode** allowing 1-click execution of the entire 8-agent pipeline.
+2. **🧠 Live Reasoning Activity Panel (`AgentActivityPanel.jsx`)**: Embedded into inspect modals displaying real-time step-by-step agent thought logs.
+3. **🛰️ Orbital LiDAR 3D City Sweep**: Immersive 3D satellite radar simulation sweeping city grids upon launch.
+4. **📞 Voice Verification Gateway**: Built-in speech synthesis dialogue for calling citizens and registered municipal staff.
+5. **👷 Registered Staff Work Assignment**: Direct assignment to municipal crews with personal task queues.
+6. **⚡ 3-Second Live Data Polling**: Real-time status updates and Before & After photo resolution proofs across all active tabs.
 
 ---
 
 ## 🛠️ System Architecture & Stack
 
-```mermaid
-graph TD
-    A[Citizen / Admin / Staff Frontend - React 19 + Vite] -->|REST API Requests| B[Express.js API Gateway]
-    B -->|User Auth & Roles| C[PostgreSQL - Neon Serverless DB]
-    B -->|Defect Image Analysis| D[Google Gemini 3.5 Vision API]
-    B -->|File Storage| E[Local Uploads / Multer Engine]
-    B -->|Geocoding| F[OpenStreetMap Nominatim / Google Maps]
-    C -->|3s Live Polling Sync| A
-```
-
-- **Frontend**: React 19, Vite 6, TailwindCSS 4, Framer Motion, Lucide Icons, Leaflet GIS Maps, Recharts, Web Speech API.
+- **Frontend**: React 19, Vite 6, TailwindCSS 4, Framer Motion, Lucide Icons, Leaflet GIS, Recharts, Web Speech API.
 - **Backend**: Express.js 5, Node.js (ES Modules).
-- **Database**: PostgreSQL (Neon Serverless Engine) with automatic SQL schema migrations.
-- **AI & Integrations**: `@google/generative-ai` SDK, Firebase Admin SDK, Jimp Image Processing.
-
----
-
-## 📁 Repository Structure
-
-```
-Agentic_AI/
-├── server/                      # Express REST API Backend
-│   ├── config/                  # PostgreSQL Connection Pool & SSL Setup
-│   ├── routes/                  # API Routes
-│   │   ├── api.js               # Central API Router & Agent Engine
-│   │   ├── auth.js              # Auth, JWT, Google OAuth & Staff Queries
-│   │   ├── complaints.js        # Citizen Complaints & Deduplication
-│   │   ├── reports.js           # Road Defect Reports & GIS Feeds
-│   │   ├── workorders.js        # Work Order Dispatch & Repair Verification
-│   │   └── upload.js            # Image Upload Handler
-│   ├── services/                # PostgreSQL CRUD & User Persistence
-│   └── index.js                 # Server Entry Point & DB Schema Auto-Migrator
-├── src/                         # Vite + React Frontend
-│   ├── components/              # Reusable UI Components (Sidebar, Navbar, Map, Splash)
-│   ├── pages/                   # Application Views
-│   │   ├── ComplaintsPage.jsx   # Admin Command Center & Citizen Case Tracker
-│   │   ├── MunicipalDashboardPage.jsx # Staff Field Dispatch & Repair Proof
-│   │   ├── DashboardPage.jsx    # Analytics & City Monitoring
-│   │   ├── GisMapPage.jsx       # Interactive GIS Heatmap
-│   │   ├── RoadAnalysisPage.jsx # AI Camera Scanner & Image Uploader
-│   │   ├── UserDashboardPage.jsx # Citizen Portal Overview
-│   │   └── LandingPage.jsx      # Marketing & Feature Showcase
-│   ├── App.jsx                  # Main Router & 3s Live Polling Engine
-│   └── index.css                # Glassmorphism & Modern Design Tokens
-└── package.json                 # Monorepo Dependencies & Development Scripts
-```
+- **Database**: PostgreSQL (Neon Serverless DB) with auto SQL migrations.
+- **AI Engine**: `@google/generative-ai` SDK, Multi-Agent Orchestrator Pipeline.
 
 ---
 
 ## ⚡ Quick Start Guide
 
-### Prerequisites
-- **Node.js**: `v18.0.0` or higher
-- **PostgreSQL**: Neon DB connection string (or local PostgreSQL server)
-
-### 1. Clone & Install Dependencies
-
+### 1. Install Dependencies
 ```bash
-# Clone repository
-git clone https://github.com/Raza786-asad/Agentic_AI.git
-cd Agentic_AI
-
-# Install all root dependencies
 npm install
 ```
 
-### 2. Environment Configuration
-
-Create a `.env` file in the root or `server/` directory:
-
+### 2. Environment Variables (.env)
 ```env
 PORT=5000
 DATABASE_URL=postgresql://user:password@endpoint.neon.tech/roadguard?sslmode=require
 JWT_SECRET=your_super_secret_jwt_key
 GEMINI_API_KEY=your_google_gemini_api_key
-ADMIN_ID=admin@roadguard.gov.in
-ADMIN_PASSWORD=admin123
 ```
 
-### 3. Run Development Server
-
-Start both the backend API server and Vite frontend concurrently with a single command:
-
+### 3. Run Monorepo Server
 ```bash
 npm run dev
 ```
-
-The application will start on:
 - **Vite Frontend**: `http://localhost:3000`
 - **Express API Server**: `http://localhost:5000/api`
+- **AI Agent Control Center**: `http://localhost:3000/admin/agents`
 
 ---
 
-## 🔐 Default Credentials for Testing
+## 🔐 Credentials for Testing & Presentation
 
-| Portal | Login URL | Email / ID | Password |
+| Role | Login URL | Email / ID | Password |
 | :--- | :--- | :--- | :--- |
 | **Municipal Admin** | `/admin/login` | `admin@roadguard.gov.in` | `admin123` |
 | **Municipal Staff** | `/municipal/login` | *Registered Staff Email* | *Staff Password* |
-| **Citizen Portal** | `/login` | *Any Citizen Account* | *Citizen Password* |
+| **Citizen User** | `/login` | *Any Citizen Account* | *Citizen Password* |
 
 ---
 
 ## 📄 License & Author
 
-Developed with ❤️ for Smart City Infrastructure Transformation.
+Developed for Smart City Road Safety Infrastructure Transformation.
 - **Author**: Md. Asad Raza
 - **Repository**: [Raza786-asad/Agentic_AI](https://github.com/Raza786-asad/Agentic_AI)

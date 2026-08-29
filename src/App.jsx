@@ -23,6 +23,8 @@ import WaterloggingPage from './pages/WaterloggingPage';
 import MaintenancePage from './pages/MaintenancePage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
+import RoadexPage from './pages/RoadexPage';
+import AgentControlCenterPage from './pages/AgentControlCenterPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -492,7 +494,7 @@ function AppContent() {
   }
 
   // Determine if active route is public
-  const isPublicRoute = ['/', '/login', '/register', '/forgot-password', '/admin/login', '/municipal/login', '/municipal/register'].includes(location.pathname);
+  const isPublicRoute = ['/', '/roadex', '/agents', '/admin/agents', '/login', '/register', '/forgot-password', '/admin/login', '/municipal/login', '/municipal/register'].includes(location.pathname);
 
   // Helper redirect target based on user role
   const getDashboardRedirect = (user) => {
@@ -508,6 +510,8 @@ function AppContent() {
       <>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/roadex" element={<RoadexPage />} />
+          <Route path="/agents" element={<AgentControlCenterPage />} />
           <Route path="/login" element={
             currentUser ? <Navigate to={getDashboardRedirect(currentUser)} replace /> : <LoginPage onLogin={handleLogin} />
           } />

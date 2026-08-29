@@ -5,6 +5,7 @@ import {
   Phone, PhoneCall, PhoneOff, Send, MessageSquare, Landmark, 
   MapPin, Loader2, Sparkles, X, ChevronRight, MessageCircle
 } from 'lucide-react';
+import AgentActivityPanel from '../components/AgentActivityPanel';
 
 export default function ComplaintsPage({ 
   complaints = [], 
@@ -590,6 +591,9 @@ export default function ComplaintsPage({
                   </p>
                 </div>
               </div>
+
+              {/* 8-AGENT AI REASONING ACTIVITY STREAM */}
+              <AgentActivityPanel />
 
               {/* AI RISK ASSESSMENT CARD */}
               <div className="p-5 rounded-2xl bg-slate-800/10 border border-custom-sage/20 space-y-3">
